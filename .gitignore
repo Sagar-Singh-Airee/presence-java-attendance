@@ -1,4 +1,7 @@
 
+# Purpose: Lists files and folders Git should not save as source code.
+# Why it is used: It keeps generated files, private local data, and large temporary tools out of the project history.
+
 # Maven build output
 target/
 target_test-classes/

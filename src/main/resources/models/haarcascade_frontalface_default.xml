@@ -1,4 +1,6 @@
 <?xml version="1.0"?>
+<!-- Purpose: Pre-trained OpenCV data for detecting a frontal human face. -->
+<!-- Why it is used: It lets Presence locate faces before comparing them with registered faces. -->
 <!--
     Stump-based 24x24 discrete(?) adaboost frontal face detector.
     Created by Rainer Lienhart.

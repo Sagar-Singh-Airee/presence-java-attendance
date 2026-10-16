@@ -1,177 +1,339 @@
 # Presence — Face Recognition Attendance System
 
-> **Purpose:** This is the simple user and developer guide for the whole project.
-> **Why it is used:** It explains how to run, use, understand, and troubleshoot Presence without reading every source file.
+> **Purpose:** This file is the complete beginner guide for running, using, explaining, and troubleshooting Presence.
+> **Why it is used:** Someone can use this project on Windows or macOS without reading the Java source code first.
 
-Presence is a small, local Java web application for an academic attendance demonstration. It detects faces with OpenCV’s Haar Cascade, identifies registered faces with OpenCV contrib’s real LBPH recognizer, and stores one attendance record per person per local calendar day.
+Presence is a local face-recognition attendance website. Register people with clear face photos, open the live webcam view, and Presence records each recognized person once per day.
 
-It runs at **http://127.0.0.1:8080**. Face photos, the SQLite database, and the generated model never leave the computer.
+Everything stays on the same computer. The local database, original face photos, and face-recognition model are kept in the **data** folder. No cloud account or internet connection is needed after the application has been built.
 
-> This is not a production biometric-security system. It has no login, liveness detection, anti-spoofing, or accuracy guarantee. Get appropriate permission from every person whose image is registered.
+> **Important:** Use this only with every person’s knowledge and permission. This is an academic project, not a high-security biometric system. It has no liveness detection, anti-spoofing, login accounts, or perfect-accuracy guarantee.
 
-## What is included
+## 1. Understand what starts first
 
-- Live MJPEG webcam feed with face boxes and labels
-- A shared camera capture service: browser viewers do not open separate physical cameras
-- Multi-photo registration, image validation, Haar face detection, and 200×200 grayscale/equalized preprocessing
-- Genuine OpenCV `LBPHFaceRecognizer`, retrained from saved original photos at startup and after additions/removals
-- SQLite-backed people, face-sample, and attendance records
-- Database-level and service-level protection against duplicate daily attendance
-- Registered-face removal that deletes photographs/recognition data but retains historical attendance
-- Searchable/filterable attendance history and UTF-8 CSV export
-- Dark, responsive local web UI and JUnit tests that never use a real webcam
+Presence is one Spring Boot application.
 
-## Technology and dependency check
+- The **backend** is the Java command that starts the local web server.
+- The **frontend** is already included in the same application as HTML, CSS, and JavaScript pages.
+- After starting the backend command, open the browser address. There is **no separate frontend command**.
 
-The project uses Java 21, Spring Boot 3.5.7, SQLite JDBC 3.50.3.0, and Bytedeco OpenCV 4.14.0-1.5.14. The Maven configuration deliberately declares the OpenCV Java bindings plus their explicit 64-bit Windows native artifacts. This supplies the contrib `cv::face` module used by `LBPHFaceRecognizer` without downloading native binaries for every operating system.
+The normal local address is:
 
-The included `nativeOpenCvAndContribLbphAreAvailable` test loads the native library and constructs `LBPHFaceRecognizer`. That is the project’s compile-and-run check for the required native/contrib API; run it with the commands below on the intended Windows computer.
+```text
+http://127.0.0.1:8081
+```
 
-The official `haarcascade_frontalface_default.xml` file is bundled in `src/main/resources/models/`. On first startup it is copied into `data/models/`, where OpenCV can open it from a normal filesystem path. No separate model download is needed.
+## 2. Windows — instant use of the ready-made application
 
-## Windows 10/11 setup
+### Step 1: Check Java
 
-1. Install a **64-bit JDK 21** and Apache **Maven 3.9+**. Ensure both `java` and `mvn` are on the PATH.
-
-2. In PowerShell, verify the installations:
-
-   ```powershell
-   java -version
-   mvn -version
-   ```
-
-   `java -version` should report version 21. Maven should report that it is using Java 21.
-
-3. Open PowerShell in this project folder and download/build dependencies:
-
-   ```powershell
-   mvn clean test
-   mvn clean package
-   ```
-
-   Maven obtains the OpenCV Java libraries and the Windows native binaries on this initial build. Once Maven’s local cache is populated, normal use of Presence does not need an internet connection.
-
-4. Start the application:
-
-   ```powershell
-   mvn spring-boot:run
-   ```
-
-5. Browse to [http://127.0.0.1:8080](http://127.0.0.1:8080).
-
-The database tables and data folders are created automatically; there is no SQL setup command.
-
-### Packaged launch
-
-After `mvn clean package`, start the packaged application with:
+Open PowerShell inside the Presence folder and run:
 
 ```powershell
-java -jar target\presence-1.0.0.jar
+java -version
 ```
 
-For a simpler repeat launch after packaging, double-click `start-presence.cmd` or run this in Command Prompt:
+It must show Java version **21**.
 
-```cmd
-start-presence.cmd
-```
-
-Stop either launch with `Ctrl+C`. The camera is released during Spring Boot shutdown.
-
-### Choose a different webcam
-
-Camera index `0` is the default. To try camera index 1 for one Maven launch:
+If Java is not installed and Windows Package Manager is available, run:
 
 ```powershell
-mvn spring-boot:run "-Dspring-boot.run.arguments=--presence.camera-index=1"
+winget install EclipseAdoptium.Temurin.21.JDK
 ```
 
-For the packaged application:
+Close PowerShell, open a new PowerShell window, and run:
 
 ```powershell
-java -jar target\presence-1.0.0.jar --presence.camera-index=1
+java -version
 ```
 
-Other useful properties are `--presence.recognition-threshold=95`, `--presence.frame-width=640`, and `--presence.frame-height=480`. The server deliberately binds only to `127.0.0.1` by default.
+### Step 2: Start the backend
 
-## Use it
+This is the known working command for this Windows computer:
 
-1. Open **Register face**. Enter a full name and upload one or more well-lit, front-facing JPG/JPEG/PNG photos containing a clear face. The form accepts a maximum total of 16 MB.
-2. Each file is decoded by OpenCV, checked with the Haar Cascade, and rejected if unreadable or no front-facing face is detected. The largest detected face is used for that photo’s LBPH training sample.
-3. Return to the dashboard. Allow browser camera permission if asked. A recognized face gets a mint label; an unrecognized face gets `Unknown` and is never recorded.
-4. Open **Attendance** to search records by a fragment of a name and/or a date. The CSV export always contains all database records, not merely the current filter result.
-5. Open **Registered faces** to remove a person. Their local photos and training samples are deleted, and their historical attendance continues to show their saved name/date/time.
+```powershell
+java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8081 --presence.camera-index=0
+```
 
-## Understanding the recognition threshold
+Wait until the terminal shows:
 
-LBPH returns a *distance-like score*, not a probability or percentage. Lower is a closer match. Presence calls a person recognized only when the result is at or below `presence.recognition-threshold` (default `95`). Lighting, camera quality, pose, and the small training set affect the useful threshold; test it with consented photos and adjust it conservatively. It does not imply perfect recognition.
+```text
+Tomcat started on port 8081
+```
 
-## Local data
+### Step 3: Open the frontend
 
-Runtime data is deliberately ignored by Git:
+Open a second PowerShell window and run:
+
+```powershell
+start http://127.0.0.1:8081
+```
+
+Or paste this address into Chrome, Edge, or Firefox:
+
+```text
+http://127.0.0.1:8081
+```
+
+Keep the first PowerShell window open. To stop Presence safely, click that first window and press:
+
+```text
+Ctrl+C
+```
+
+### Easier repeat start on Windows
+
+This launcher selects the current camera-fixed package and uses port 8081:
+
+```powershell
+.\start-presence.cmd --presence.camera-index=0
+```
+
+## 3. Windows — download dependencies and rebuild the project
+
+You need this section only if you change Java, HTML, CSS, or configuration files and need a new application package.
+
+### Step 1: Install Maven
+
+```powershell
+winget install Apache.Maven
+```
+
+Close PowerShell, open it again, then check both tools:
+
+```powershell
+java -version
+mvn -version
+```
+
+### Step 2: Build and download project dependencies
+
+Inside the Presence folder, run:
+
+```powershell
+mvn clean test
+mvn clean package
+```
+
+On the first run, Maven automatically downloads all required dependencies: Spring Boot, SQLite, OpenCV, and the Windows OpenCV native libraries. This can take several minutes. Later builds use the local Maven cache and are faster.
+
+### Step 3: Run the newly built package
+
+```powershell
+java -jar ".\target\presence-1.0.0.jar" --server.port=8081 --presence.camera-index=0
+```
+
+Then open:
+
+```powershell
+start http://127.0.0.1:8081
+```
+
+## 4. macOS — install, build, and run
+
+The ready-made **presence-camera-fix-v2.jar** in this folder is packaged for Windows. On a Mac, build a Mac package from the source code so Maven downloads the matching Mac OpenCV libraries.
+
+### Step 1: Install Homebrew if needed
+
+Check whether Homebrew is already installed:
+
+```bash
+brew --version
+```
+
+If that command says it cannot find **brew**, install Homebrew with its official command:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+### Step 2: Install Java 21 and Maven
+
+```bash
+brew install openjdk@21 maven
+```
+
+Make Java 21 available in the current Terminal window:
+
+```bash
+export PATH="$(brew --prefix openjdk@21)/bin:$PATH"
+export JAVA_HOME="$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home"
+java -version
+mvn -version
+```
+
+To keep those Java settings after opening a new Terminal window, run:
+
+```bash
+echo 'export PATH="$(brew --prefix openjdk@21)/bin:$PATH"' >> ~/.zshrc
+echo 'export JAVA_HOME="$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Step 3: Build and automatically download Mac dependencies
+
+Open Terminal in the Presence project folder.
+
+For an Apple Silicon Mac (M1, M2, M3, M4), run:
+
+```bash
+mvn -Djavacpp.platform=macosx-arm64 clean test
+mvn -Djavacpp.platform=macosx-arm64 clean package
+```
+
+For an Intel Mac, run:
+
+```bash
+mvn -Djavacpp.platform=macosx-x86_64 clean test
+mvn -Djavacpp.platform=macosx-x86_64 clean package
+```
+
+Maven downloads Spring Boot, SQLite, OpenCV, and the correct native Mac OpenCV libraries during the first build.
+
+### Step 4: Start the backend and open the frontend
+
+```bash
+java -jar target/presence-1.0.0.jar --server.port=8081 --presence.camera-index=0
+```
+
+Open a second Terminal window and run:
+
+```bash
+open http://127.0.0.1:8081
+```
+
+To stop the app, return to the first Terminal window and press **Ctrl+C**.
+
+## 5. Use Presence
+
+### Register a person
+
+1. Open the dashboard at **http://127.0.0.1:8081**.
+2. Click **Register a face**.
+3. Enter the person’s full name.
+4. Select 3 to 5 clear JPG, JPEG, or PNG photos of that same person.
+5. Click **Register Face**.
+
+Best photos are well lit, sharp, front facing, and show only one person. Registering the same name later adds more training photos for that person.
+
+### Mark attendance
+
+1. Return to the dashboard.
+2. Confirm that the live camera image is visible.
+3. Ask the registered person to look at the webcam.
+4. When the person’s name appears in green, attendance is automatically saved.
+
+One person is recorded only once per calendar day. Unknown faces are labeled **Unknown** and are never recorded.
+
+### View or download attendance
+
+1. Open **Attendance** from the menu.
+2. Search by name or choose a date.
+3. Click **Download CSV** to download a file that opens in Excel.
+
+### Manage registered people
+
+Open **Registered Faces** to review photos or delete a person. Deleting a person removes their local training photos and future recognition data, but keeps their earlier attendance records.
+
+## 6. Camera and port troubleshooting
+
+### Choose the correct camera
+
+Camera index **0** is the real webcam that worked on this Windows computer.
+
+Camera index **1** was the OBS virtual camera. If you see an OBS image, stop the app using **Ctrl+C** and start it with camera index 0:
+
+```powershell
+java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8081 --presence.camera-index=0
+```
+
+Before starting the application, close OBS, Zoom, Teams, Discord, or other apps that may be using the webcam.
+
+On Windows, also check **Settings → Privacy & security → Camera**, then enable **Camera access** and **Let desktop apps access your camera**.
+
+### Change the port
+
+A port is the local number after the colon in the browser address.
+
+- Default in these instructions: **8081**
+- If 8081 is busy, use **8082**
+
+Windows:
+
+```powershell
+java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8082 --presence.camera-index=0
+start http://127.0.0.1:8082
+```
+
+macOS:
+
+```bash
+java -jar target/presence-1.0.0.jar --server.port=8082 --presence.camera-index=0
+open http://127.0.0.1:8082
+```
+
+Always open the same port in the browser that was used in the Java command.
+
+## 7. Where your local data is stored
+
+When Presence starts for the first time, it creates:
 
 ```text
 data/
-├── presence.db                 SQLite database
-├── known_faces/
-│   └── <person-id>/            original registered image files
+├── presence.db                         names and attendance records
+├── known_faces/<person-id>/            original registered face photos
 └── models/
-    ├── haarcascade_frontalface_default.xml
-    └── lbph_model.yml          regenerated after registrations/deletions
+    ├── haarcascade_frontalface_default.xml   face detector
+    └── lbph_model.yml                        trained recognition model
 ```
 
-The saved originals are the source of truth. The LBPH model is rebuilt at every startup so the application can recover after restarts. Do not manually edit database image paths or move files in `data/known_faces` while the app runs.
+To back up the project, stop Presence with **Ctrl+C**, then copy the entire **data** folder to a safe location.
 
-## Troubleshooting
+Do not move or edit files inside **data/known_faces** while the application is running.
 
-| Symptom | What to try |
-| --- | --- |
-| `java` or `mvn` is not recognized | Install JDK 21/Maven and add their `bin` folders to the Windows PATH; reopen PowerShell. |
-| Camera unavailable | Close Teams, Zoom, browser tabs, or other apps using the camera; confirm Windows privacy settings allow desktop apps to use it; then try `--presence.camera-index=1`. The rest of Presence remains usable without a camera. |
-| OpenCV could not load | Run `mvn clean test` once with internet access so Maven can obtain the declared Windows OpenCV native artifacts. Confirm Maven is using 64-bit Java 21. Do not mix another OpenCV Java binding into this project. |
-| No face found during registration | Use a closer, front-facing, sharp image with good, even lighting and one dominant face. Haar detection is deliberately conservative. |
-| Face is often Unknown | Add several varied, clear photographs for the same exact name and cautiously tune `presence.recognition-threshold`; LBPH is sensitive to capture conditions. |
-| Port 8080 is in use | Start with `mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"` and open that port locally. |
-
-## Automated tests
-
-`src/test/java/com/presence/PresenceApplicationTests.java` covers:
-
-- schema creation and person persistence
-- case-insensitive duplicate-name rejection
-- duplicate same-day attendance and later-date attendance
-- name/date filters
-- CSV headers and escaped values
-- deletion preserving historic attendance
-- empty/invalid registration input
-- OpenCV native initialization plus LBPH-contrib availability
-
-The tests use `target/test-presence-data`, not the real `data` directory, and do not access a physical webcam. Manual camera verification is still required: register consented test photos, open the dashboard, confirm the feed/boxes, confirm a recognized person receives exactly one record for the day, and confirm an unknown face creates none.
-
-## Project tree
+## 8. How Presence works
 
 ```text
-Presence/
-├── pom.xml
-├── README.md
-├── .gitignore
-├── src/main/java/com/presence/
-│   ├── PresenceApplication.java
-│   ├── config/                 application, database, paths, native OpenCV setup
-│   ├── controller/             dashboard, registration, photos, people, attendance
-│   ├── model/                  Person, FaceSample, AttendanceRecord
-│   ├── repository/             parameterized SQLite access
-│   └── service/                camera, Haar/LBPH, registration, records, CSV, storage
-├── src/main/resources/
-│   ├── application.properties
-│   ├── models/haarcascade_frontalface_default.xml
-│   ├── static/css/styles.css
-│   └── templates/
-└── src/test/java/com/presence/PresenceApplicationTests.java
+Register photos → find the face → train the local recognition model
+                                              ↓
+Webcam image → find face → compare with model → known name / Unknown
+                                              ↓
+                              known name → mark attendance once that day
 ```
 
-## Known limitations
+The project uses:
 
-- A physical webcam is required for live recognition and has to be tested on the target computer.
-- Haar + LBPH is a classical, lightweight academic approach. It is not robust enough for security or high-stakes identity decisions.
-- There is no liveness check, account system, remote access, cloud backup, or support for video files/MJPEG URLs.
-- Current recognition, native-library, and camera behavior must be verified with the `mvn clean test` and manual steps above on a computer where Java 21 and Maven are installed.
+- **Haar Cascade:** finds face-shaped areas in an image.
+- **LBPH (Local Binary Patterns Histograms):** compares a detected face against the registered faces.
+
+LBPH gives a distance score, not a percentage. Lower means a closer match. Better lighting, a front-facing pose, a good webcam, and more varied training photos improve results.
+
+## 9. Project file guide
+
+Every editable source and configuration file begins with two simple comments: **Purpose** and **Why it is used**.
+
+| File or folder | Simple purpose |
+| --- | --- |
+| **pom.xml** | Maven build instructions and platform-native OpenCV dependency selection. |
+| **start-presence.cmd** | Simple Windows launcher for the packaged application. |
+| **README.md** | This setup, usage, troubleshooting, and explanation guide. |
+| **src/main/java/com/presence/PresenceApplication.java** | Starts the Spring Boot application. |
+| **config/** | Application settings, local folders, database setup, and OpenCV loading. |
+| **model/** | Person, face-photo, and attendance data structures. |
+| **repository/** | SQLite database read and write code. |
+| **service/** | Camera, face recognition, registration, attendance, CSV, and file-storage logic. |
+| **controller/** | Connects browser pages and web requests to the application services. |
+| **resources/application.properties** | Default ports, camera index, upload limits, and recognition settings. |
+| **resources/models/** | Pre-trained OpenCV frontal-face detector. |
+| **resources/templates/** | Browser HTML pages. |
+| **resources/static/css/styles.css** | Website visual design and mobile layout. |
+| **src/test/** | Automatic tests for core database, recognition, and attendance rules. |
+
+## 10. Important limitations
+
+- A physical webcam is required for live recognition.
+- Accuracy depends on lighting, face angle, camera quality, and training photos.
+- Haar Cascade + LBPH is lightweight and suitable for an academic demonstration, not security-grade identification.
+- There is no liveness detection, so do not use this for high-stakes decisions.
+- The app is intentionally local-only: no login accounts, cloud backup, remote access, or mobile app.
+

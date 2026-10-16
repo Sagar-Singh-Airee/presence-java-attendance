@@ -22,7 +22,7 @@
     <properties>
         <java.version>21</java.version>
         <bytedeco.version>4.14.0-1.5.14</bytedeco.version>
-        <!-- Keep the packaged/native dependency set focused on the supported Windows target. -->
+        <!-- Windows is the default. Mac users override this property with the build command documented in README.md. -->
         <javacpp.platform>windows-x86_64</javacpp.platform>
     </properties>
 
@@ -50,24 +50,24 @@
             <artifactId>opencv</artifactId>
             <version>${bytedeco.version}</version>
         </dependency>
-        <!-- Native Windows 64-bit components. Explicit classifiers avoid downloading every platform. -->
+        <!-- Native OpenCV components for one target operating system. Maven downloads the classifier selected above. -->
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacpp</artifactId>
             <version>1.5.14</version>
-            <classifier>windows-x86_64</classifier>
+            <classifier>${javacpp.platform}</classifier>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>openblas</artifactId>
             <version>0.3.34-1.5.14</version>
-            <classifier>windows-x86_64</classifier>
+            <classifier>${javacpp.platform}</classifier>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>opencv</artifactId>
             <version>${bytedeco.version}</version>
-            <classifier>windows-x86_64</classifier>
+            <classifier>${javacpp.platform}</classifier>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
