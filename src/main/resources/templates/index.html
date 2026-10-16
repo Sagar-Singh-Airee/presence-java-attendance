@@ -1,0 +1,42 @@
+<!-- Purpose: Main dashboard page showing attendance totals and the live camera view. -->
+<!-- Why it is used: This is the first page users see when they open Presence. -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Live dashboard')}"></head>
+<body>
+<div class="shell">
+    <header th:replace="~{fragments :: navigation('home')}"></header>
+    <main>
+        <section class="page-intro dashboard-intro">
+            <div><p class="eyebrow">LOCAL ATTENDANCE</p><h1>Know who is here.</h1><p>Presence records a registered face once per day, on this computer only.</p></div>
+            <a class="button primary" th:href="@{/register}">Register a face</a>
+        </section>
+        <div th:replace="~{fragments :: messages}"></div>
+        <section class="metrics" aria-label="Attendance summary">
+            <article class="metric"><span>Today’s attendance</span><strong th:text="${todayCount}">0</strong><small>unique people marked present</small></article>
+            <article class="metric"><span>Registered people</span><strong th:text="${peopleCount}">0</strong><small>available for recognition</small></article>
+            <article class="metric status"><span>Camera status</span><strong th:text="${cameraStatus}">Checking camera…</strong><small>Records stay available when it is disconnected.</small></article>
+        </section>
+        <section class="camera-panel panel">
+            <div class="section-heading"><div><p class="eyebrow">LIVE CAMERA</p><h2>Recognition feed</h2></div><span class="live-dot">Live</span></div>
+            <div class="camera-frame">
+                <img id="live-camera" alt="Live camera feed. If no webcam is available, no image is shown.">
+                <div class="camera-empty"><strong>Waiting for camera</strong><span th:text="${cameraStatus}">Camera will connect when the live feed starts.</span></div>
+            </div>
+            <p class="camera-note">Green labels are registered people below the configured LBPH distance threshold. Unknown faces are never marked present.</p>
+        </section>
+    </main>
+</div>
+<script>
+    (() => {
+        const camera = document.getElementById('live-camera');
+        const refresh = () => {
+            camera.onload = () => window.setTimeout(refresh, 150);
+            camera.onerror = () => window.setTimeout(refresh, 1000);
+            camera.src = '/video-frame?t=' + Date.now();
+        };
+        refresh();
+    })();
+</script>
+</body>
+</html>

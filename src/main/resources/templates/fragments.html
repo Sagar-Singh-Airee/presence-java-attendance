@@ -1,0 +1,26 @@
+<!-- Purpose: Reusable page parts such as the common header and navigation. -->
+<!-- Why it is used: It prevents the same design code from being repeated in every page. -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' · Presence'">Presence</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<header th:fragment="navigation(active)" class="site-header">
+    <a class="brand" th:href="@{/}"><span class="brand-mark">P</span> Presence</a>
+    <nav aria-label="Main navigation">
+        <a th:classappend="${active == 'home'} ? 'active'" th:href="@{/}">Live dashboard</a>
+        <a th:classappend="${active == 'register'} ? 'active'" th:href="@{/register}">Register face</a>
+        <a th:classappend="${active == 'faces'} ? 'active'" th:href="@{/faces}">Registered faces</a>
+        <a th:classappend="${active == 'attendance'} ? 'active'" th:href="@{/attendance}">Attendance</a>
+    </nav>
+</header>
+<div th:fragment="messages" class="messages">
+    <p th:if="${success}" class="notice success" th:text="${success}"></p>
+    <p th:if="${error}" class="notice error" th:text="${error}"></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!-- Purpose: Face-registration form page. -->
+<!-- Why it is used: It lets a user provide a name and face photos for training. -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Register face')}"></head>
+<body>
+<div class="shell narrow-shell">
+    <header th:replace="~{fragments :: navigation('register')}"></header>
+    <main>
+        <section class="page-intro"><p class="eyebrow">ENROLLMENT</p><h1>Register a face</h1><p>Upload clear photographs. If the name already exists, the photos are added to that person instead of creating a duplicate.</p></section>
+        <div th:replace="~{fragments :: messages}"></div>
+        <section class="panel form-panel">
+            <form th:action="@{/register}" method="post" enctype="multipart/form-data">
+                <label for="name">Full name</label>
+                <input id="name" name="name" type="text" maxlength="100" autocomplete="name" required th:value="${submittedName}">
+                <label for="files">Face photographs</label>
+                <input id="files" name="files" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" multiple required>
+                <p class="field-help">JPG, JPEG, or PNG only; up to 16 MB total. Use front-facing, well-lit photos with one clear face.</p>
+                <button class="button primary" type="submit">Register person</button>
+            </form>
+        </section>
+        <p class="subtle-link"><a th:href="@{/faces}">View registered people</a></p>
+    </main>
+</div>
+</body>
+</html>

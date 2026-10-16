@@ -1,0 +1,29 @@
+<!-- Purpose: Attendance history page with filters and CSV export. -->
+<!-- Why it is used: It lets users view and download the records created by recognition. -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Attendance records')}"></head>
+<body>
+<div class="shell">
+    <header th:replace="~{fragments :: navigation('attendance')}"></header>
+    <main>
+        <section class="page-intro with-action"><div><p class="eyebrow">HISTORY</p><h1>Attendance records</h1><p>Each registered name appears only once per local calendar day.</p></div><a class="button secondary" th:href="@{/attendance/export.csv}">Download CSV</a></section>
+        <div th:replace="~{fragments :: messages}"></div>
+        <section class="panel filters">
+            <form th:action="@{/attendance}" method="get">
+                <div><label for="name">Person name</label><input id="name" name="name" type="search" placeholder="Search a name" th:value="${selectedName}"></div>
+                <div><label for="date">Attendance date</label><input id="date" name="date" type="date" th:value="${selectedDate}"></div>
+                <div class="filter-actions"><button class="button primary" type="submit">Apply filters</button><a class="button text-button" th:href="@{/attendance}">Clear filters</a></div>
+            </form>
+        </section>
+        <section class="panel table-panel">
+            <div class="section-heading"><h2>Results</h2><span class="count" th:text="${#lists.size(records)} + ' record(s)'">0 records</span></div>
+            <div th:if="${#lists.isEmpty(records)}" class="empty-state compact"><p>No matching attendance records were found.</p></div>
+            <div th:unless="${#lists.isEmpty(records)}" class="table-wrap"><table><thead><tr><th>Person</th><th>Date</th><th>Time</th></tr></thead><tbody>
+                <tr th:each="record : ${records}"><td th:text="${record.personName}">Person</td><td th:text="${#temporals.format(record.attendanceDate, 'dd MMM yyyy')}">Date</td><td th:text="${#temporals.format(record.attendanceTime, 'HH:mm:ss')}">Time</td></tr>
+            </tbody></table></div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

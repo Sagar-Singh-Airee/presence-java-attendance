@@ -1,0 +1,27 @@
+<!-- Purpose: Page listing all registered people and their saved face photos. -->
+<!-- Why it is used: It lets users review or remove people from recognition. -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Registered faces')}"></head>
+<body>
+<div class="shell">
+    <header th:replace="~{fragments :: navigation('faces')}"></header>
+    <main>
+        <section class="page-intro with-action"><div><p class="eyebrow">FACE LIBRARY</p><h1>Registered faces</h1><p>Original photographs remain only in this project’s local data folder.</p></div><a class="button primary" th:href="@{/register}">Register new person</a></section>
+        <div th:replace="~{fragments :: messages}"></div>
+        <section th:if="${#lists.isEmpty(people)}" class="panel empty-state"><h2>No faces registered yet</h2><p>Register a person with a clear, front-facing photograph to begin.</p><a class="button primary" th:href="@{/register}">Register a face</a></section>
+        <section th:unless="${#lists.isEmpty(people)}" class="people-grid">
+            <article th:each="person : ${people}" class="person-card panel">
+                <img th:if="${person.sampleImagePath != null}" class="person-photo" th:src="@{'/photos/' + ${person.sampleImagePath}}" th:alt="${person.name} + ' registration photograph'">
+                <div th:unless="${person.sampleImagePath != null}" class="person-photo placeholder">No photo</div>
+                <div class="person-card-details"><h2 th:text="${person.name}">Name</h2><p>Registered <time th:text="${#temporals.format(person.createdAt, 'dd MMM yyyy')}">today</time></p>
+                    <form th:action="@{'/faces/' + ${person.id} + '/delete'}" method="post" th:attr="onsubmit=|return confirm('Remove ${person.name}? Their photographs and recognition data will be deleted, but historical attendance will remain.');|">
+                        <button class="button danger" type="submit">Remove</button>
+                    </form>
+                </div>
+            </article>
+        </section>
+    </main>
+</div>
+</body>
+</html>

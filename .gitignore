@@ -1,0 +1,19 @@
+
+# Maven build output
+target/
+target_test-classes/
+
+# Local biometric data and database
+data/known_faces/
+data/presence.db
+data/models/lbph_model.yml
+
+# Logs
+*.log
+
+# IDE settings
+.idea/
+.vscode/
+
+# Local development tools
+build-tools/

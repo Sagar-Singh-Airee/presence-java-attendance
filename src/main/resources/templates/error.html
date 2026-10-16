@@ -1,0 +1,7 @@
+<!-- Purpose: Friendly error page for web requests that cannot be completed. -->
+<!-- Why it is used: It gives users a clear message instead of technical error details. -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Something went wrong')}"></head>
+<body><div class="shell narrow-shell"><header th:replace="~{fragments :: navigation('')}"></header><main><section class="panel empty-state error-page"><p class="eyebrow">REQUEST COULD NOT FINISH</p><h1>Something needs another try.</h1><p th:text="${error}">Something went wrong.</p><a class="button primary" th:href="@{/}">Return to dashboard</a></section></main></div></body>
+</html>
