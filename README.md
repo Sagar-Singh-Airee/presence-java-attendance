@@ -1,339 +1,300 @@
 # SmartVision — Face Recognition Attendance System
 
-> **Purpose:** This file is the complete beginner guide for running, using, explaining, and troubleshooting SmartVision.
-> **Why it is used:** Someone can use this project on Windows or macOS without reading the Java source code first.
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.7-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://adoptium.net)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.14.0--1.5.14-5C3EE8?logo=opencv&logoColor=white)](https://bytedeco.org)
+[![SQLite](https://img.shields.io/badge/SQLite-3.50.3-003B57?logo=sqlite&logoColor=white)](https://sqlite.org)
+[![Privacy](https://img.shields.io/badge/100%25-Local_&_Private-155240)](#)
 
-SmartVision is a local face-recognition attendance website. Register people with clear face photos, open the live webcam view, and SmartVision records each recognized person once per day.
+> **Welcome!** This guide is written so that **anyone with only VS Code installed** can clone and run this project in minutes, even if you are an absolute beginner and have **never logged into GitHub**.
+>
+> SmartVision runs entirely on your local machine. No cloud accounts, no external tracking, no internet connection required to recognize faces.
 
-Everything stays on the same computer. The local database, original face photos, and face-recognition model are kept in the **data** folder. No cloud account or internet connection is needed after the application has been built.
+---
 
-> **Important:** Use this only with every person’s knowledge and permission. This is an academic project, not a high-security biometric system. It has no liveness detection, anti-spoofing, login accounts, or perfect-accuracy guarantee.
+## 📑 Table of Contents
+1. [Prerequisites Checklist](#-prerequisites-checklist)
+2. [Step 0: How to Open the Terminal in VS Code](#-step-0-how-to-open-the-terminal-in-vs-code)
+3. [Step 1: Clone the Project (No GitHub Login Needed)](#-step-1-clone-the-project-no-github-login-needed)
+4. [🪟 WINDOWS Guide (Install, Run, & Auto-Launch)](#-windows-guide)
+   - [Method A: One-Click Automated Start (Recommended)](#method-a-one-click-automated-start-recommended)
+   - [Method B: Direct Terminal Command](#method-b-direct-terminal-command)
+   - [How to Rebuild from Source on Windows](#how-to-rebuild-from-source-on-windows)
+5. [🍎 macOS Guide (Apple Silicon & Intel)](#-macos-guide)
+   - [Step 1: Install Tools via Homebrew](#step-1-install-tools-via-homebrew)
+   - [Step 2: Build for Mac (OpenCV Native Libraries)](#step-2-build-for-mac-opencv-native-libraries)
+   - [Method A: One-Click Automated Start](#method-a-one-click-automated-start)
+   - [Method B: Direct Terminal Command](#method-b-direct-terminal-command-1)
+6. [🎯 How to Use SmartVision](#-how-to-use-smartvision)
+7. [🛠️ Troubleshooting & Common Questions](#️-troubleshooting--common-questions)
 
-## 1. Understand what starts first
+---
 
-SmartVision is one Spring Boot application.
+## 📋 Prerequisites Checklist
 
-- The **backend** is the Java command that starts the local web server.
-- The **frontend** is already included in the same application as HTML, CSS, and JavaScript pages.
-- After starting the backend command, open the browser address. There is **no separate frontend command**.
+Before running, you only need **one thing**:
+* **Java 21 JDK** (Java Development Kit) installed on your computer.
 
-The normal local address is:
+If you don't have it yet, don't worry! Follow the step-by-step commands below for your operating system.
 
-```text
-http://127.0.0.1:8081
+---
+
+## 💻 Step 0: How to Open the Terminal in VS Code
+
+You will run all commands inside the VS Code integrated terminal:
+
+* **Windows:** Press <kbd>Ctrl</kbd> + <kbd>`</kbd> (the backtick key next to number 1)  
+  *Or from the top menu:* Click **Terminal** → **New Terminal**.
+* **macOS:** Press <kbd>Cmd</kbd> + <kbd>`</kbd>  
+  *Or from the top menu:* Click **Terminal** → **New Terminal**.
+
+A terminal panel will appear at the bottom of your VS Code window.
+
+---
+
+## 📦 Step 1: Clone the Project (No GitHub Login Needed)
+
+You do **NOT** need to sign in to GitHub. Run this command in your VS Code terminal to download the project:
+
+```bash
+git clone https://github.com/your-username/Presence.git
+cd Presence
 ```
 
-## 2. Windows — instant use of the ready-made application
+*(If you downloaded the project as a `.zip` file, simply extract it and open the folder in VS Code via **File → Open Folder...**)*
 
-### Step 1: Check Java
+---
 
-Open PowerShell inside the SmartVision folder and run:
+## 🪟 WINDOWS Guide
+
+### Step 1.1: Verify or Install Java 21
+
+In your VS Code terminal (PowerShell), check if Java is installed:
 
 ```powershell
 java -version
 ```
 
-It must show Java version **21**.
-
-If Java is not installed and Windows Package Manager is available, run:
+* **If it says `openjdk version "21..."` or `java version "21..."`:** Great! Skip to Step 1.2.
+* **If it says "java is not recognized":** Install Java 21 with one copy-paste command:
 
 ```powershell
 winget install EclipseAdoptium.Temurin.21.JDK
 ```
 
-Close PowerShell, open a new PowerShell window, and run:
+*(After installation completes, close the VS Code terminal panel with the trash icon and open a new one with <kbd>Ctrl</kbd> + <kbd>`</kbd> to refresh PATH).*
 
+Verify again:
 ```powershell
 java -version
 ```
 
-### Step 2: Start the backend
+---
 
-This is the known working command for this Windows computer:
+### Method A: One-Click Automated Start (Recommended)
+
+Run this single command in your terminal. It checks Java, picks the camera-fixed build, starts the web server on port `8081`, and **automatically opens your browser** in 4 seconds:
 
 ```powershell
-java -jar ".\target\smartvision-ui-v4.jar" --server.port=8081 --presence.camera-index=0
+.\start-presence.cmd
 ```
 
-Wait until the terminal shows:
+> 💡 **What this does automatically:**
+> 1. Detects your Java 21 environment.
+> 2. Starts the backend on **`http://127.0.0.1:8081`**.
+> 3. Pops open your default web browser automatically — no copy-pasting URLs required!
+> 4. To stop the application safely at any time, click the terminal and press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 
+---
+
+### Method B: Direct Terminal Command
+
+If you prefer to run the standalone command directly in PowerShell:
+
+```powershell
+java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8081 --presence.camera-index=0
+```
+
+Wait until you see:
 ```text
-Tomcat started on port 8081
+Tomcat started on port 8081 (http) with context path '/'
+Started PresenceApplication in 4.995 seconds
 ```
 
-### Step 3: Open the frontend
-
-Open a second PowerShell window and run:
+Then open your browser automatically by running in a second terminal tab (or pasting into your browser):
 
 ```powershell
 start http://127.0.0.1:8081
 ```
 
-Or paste this address into Chrome, Edge, or Firefox:
+---
 
-```text
-http://127.0.0.1:8081
-```
+### How to Rebuild from Source on Windows
 
-Keep the first PowerShell window open. To stop SmartVision safely, click that first window and press:
+*(Only needed if you modify Java, HTML, or CSS code)*
 
-```text
-Ctrl+C
-```
+1. Install Maven:
+   ```powershell
+   winget install Apache.Maven
+   ```
+2. Re-open terminal and package the project:
+   ```powershell
+   mvn clean package -DskipTests
+   ```
+3. Run the newly packaged application:
+   ```powershell
+   java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8081 --presence.camera-index=0
+   ```
 
-### Easier repeat start on Windows
+---
 
-This launcher selects the current camera-fixed package and uses port 8081:
+## 🍎 macOS Guide
 
-```powershell
-.\start-presence.cmd --presence.camera-index=0
-```
+On macOS, OpenCV requires native libraries matching your Mac's processor architecture (Apple Silicon M1/M2/M3/M4 or Intel).
 
-## 3. Windows — download dependencies and rebuild the project
+### Step 1: Install Tools via Homebrew
 
-You need this section only if you change Java, HTML, CSS, or configuration files and need a new application package.
-
-### Step 1: Install Maven
-
-```powershell
-winget install Apache.Maven
-```
-
-Close PowerShell, open it again, then check both tools:
-
-```powershell
-java -version
-mvn -version
-```
-
-### Step 2: Build and download project dependencies
-
-Inside the SmartVision folder, run:
-
-```powershell
-mvn clean test
-mvn clean package
-```
-
-On the first run, Maven automatically downloads all required dependencies: Spring Boot, SQLite, OpenCV, and the Windows OpenCV native libraries. This can take several minutes. Later builds use the local Maven cache and are faster.
-
-### Step 3: Run the newly built package
-
-```powershell
-java -jar ".\target\smartvision-1.0.0.jar" --server.port=8081 --presence.camera-index=0
-```
-
-Then open:
-
-```powershell
-start http://127.0.0.1:8081
-```
-
-## 4. macOS — install, build, and run
-
-The ready-made **smartvision-ui-v4.jar** in this folder is packaged for Windows. On a Mac, build a Mac package from the source code so Maven downloads the matching Mac OpenCV libraries.
-
-### Step 1: Install Homebrew if needed
-
-Check whether Homebrew is already installed:
-
-```bash
-brew --version
-```
-
-If that command says it cannot find **brew**, install Homebrew with its official command:
-
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-### Step 2: Install Java 21 and Maven
+In your VS Code terminal (zsh), install Java 21 and Maven using [Homebrew](https://brew.sh):
 
 ```bash
 brew install openjdk@21 maven
 ```
 
-Make Java 21 available in the current Terminal window:
-
-```bash
-export PATH="$(brew --prefix openjdk@21)/bin:$PATH"
-export JAVA_HOME="$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home"
-java -version
-mvn -version
-```
-
-To keep those Java settings after opening a new Terminal window, run:
-
+Add Java 21 to your path:
 ```bash
 echo 'export PATH="$(brew --prefix openjdk@21)/bin:$PATH"' >> ~/.zshrc
 echo 'export JAVA_HOME="$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-### Step 3: Build and automatically download Mac dependencies
-
-Open Terminal in the SmartVision project folder.
-
-For an Apple Silicon Mac (M1, M2, M3, M4), run:
-
+Verify:
 ```bash
-mvn -Djavacpp.platform=macosx-arm64 clean test
-mvn -Djavacpp.platform=macosx-arm64 clean package
+java -version
+mvn -version
 ```
 
-For an Intel Mac, run:
+---
+
+### Step 2: Build for Mac (OpenCV Native Libraries)
+
+Run the build command for your Mac type:
+
+* **For Apple Silicon Mac (M1, M2, M3, M4, Max, Ultra):**
+  ```bash
+  mvn -Djavacpp.platform=macosx-arm64 clean package -DskipTests
+  ```
+
+* **For Intel Mac:**
+  ```bash
+  mvn -Djavacpp.platform=macosx-x86_64 clean package -DskipTests
+  ```
+
+---
+
+### Method A: One-Click Automated Start
+
+We have included a dedicated Mac launcher script `start-presence.sh`:
 
 ```bash
-mvn -Djavacpp.platform=macosx-x86_64 clean test
-mvn -Djavacpp.platform=macosx-x86_64 clean package
+chmod +x ./start-presence.sh
+./start-presence.sh
 ```
 
-Maven downloads Spring Boot, SQLite, OpenCV, and the correct native Mac OpenCV libraries during the first build.
+> 💡 **What this does automatically:**
+> 1. Verifies your Java environment.
+> 2. Starts the server on port `8081`.
+> 3. Automatically triggers `open http://127.0.0.1:8081` to launch Safari/Chrome.
+> 4. To stop the server, press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
 
-### Step 4: Start the backend and open the frontend
+---
+
+### Method B: Direct Terminal Command
 
 ```bash
 java -jar target/smartvision-1.0.0.jar --server.port=8081 --presence.camera-index=0
 ```
 
-Open a second Terminal window and run:
-
+To open your browser from terminal:
 ```bash
 open http://127.0.0.1:8081
 ```
 
-To stop the app, return to the first Terminal window and press **Ctrl+C**.
+---
 
-## 5. Use SmartVision
+## 🎯 How to Use SmartVision
 
-### Register a person
+Once open at **`http://127.0.0.1:8081`**:
 
-1. Open the dashboard at **http://127.0.0.1:8081**.
-2. Click **Register a face**.
-3. Enter the person’s full name.
-4. Select 3 to 5 clear JPG, JPEG, or PNG photos of that same person.
-5. Click **Register Face**.
+### 1. Register a Person
+* Click **Register** in the navigation bar (or visit `/register`).
+* Enter the person's full name (e.g., `Ayesha Sharma`).
+* Select **3 to 5 clear face photos** (`.jpg`, `.jpeg`, or `.png`).
+* Click **Add to face library →**.
+* *Tip:* Good photos are well-lit, front-facing, and show only one face. Re-registering the same name adds additional training photos to strengthen their profile.
 
-Best photos are well lit, sharp, front facing, and show only one person. Registering the same name later adds more training photos for that person.
+### 2. Mark Daily Attendance
+* Return to the **Live** dashboard (`/`).
+* Look towards your webcam.
+* When a face is detected, a bounding box appears:
+  * 🟩 **Green Box + Name:** Face recognized! Attendance is recorded automatically once for today.
+  * 🔴 **Red Box + "Unknown":** Face not yet registered (never recorded to attendance).
 
-### Mark attendance
+### 3. Review & Export Records
+* Click **Attendance** (`/attendance`) to view everyone marked present today.
+* Filter by person name or pick any date.
+* Click **Download CSV ↓** to download a clean spreadsheet that opens directly in Microsoft Excel, Google Sheets, or Numbers.
 
-1. Return to the dashboard.
-2. Confirm that the live camera image is visible.
-3. Ask the registered person to look at the webcam.
-4. When the person’s name appears in green, attendance is automatically saved.
+### 4. Manage Face Library
+* Click **People** (`/faces`) to view all registered persons and their profile preview.
+* If someone leaves, click **Remove person** to delete their photos and model training data. (Their past attendance history remains preserved).
 
-One person is recorded only once per calendar day. Unknown faces are labeled **Unknown** and are never recorded.
+---
 
-### View or download attendance
+## 🛠️ Troubleshooting & Common Questions
 
-1. Open **Attendance** from the menu.
-2. Search by name or choose a date.
-3. Click **Download CSV** to download a file that opens in Excel.
+### 1. Webcam says "Camera unavailable" or shows black/OBS screen
+* **Camera Index:** Built-in webcams are usually index `0`. If you have virtual camera software (OBS, Zoom, Camo), your real webcam might be index `1` or `2`.
+  Start with camera index 1:
+  ```powershell
+  java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8081 --presence.camera-index=1
+  ```
+* **Privacy Permissions:**
+  * **Windows:** Open **Settings → Privacy & security → Camera**, turn ON *Camera access* and *Let desktop apps access your camera*.
+  * **macOS:** Open **System Settings → Privacy & Security → Camera**, allow VS Code and Terminal.
+* **Camera In Use:** Close any app using the camera (Zoom, Teams, OBS, Discord) before starting SmartVision.
 
-### Manage registered people
+### 2. "Port 8081 is already in use"
+If port 8081 is busy (e.g. by another program), simply start on port **8082**:
 
-Open **Registered Faces** to review photos or delete a person. Deleting a person removes their local training photos and future recognition data, but keeps their earlier attendance records.
+* **Windows:**
+  ```powershell
+  java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8082 --presence.camera-index=0
+  start http://127.0.0.1:8082
+  ```
+* **macOS:**
+  ```bash
+  java -jar target/smartvision-1.0.0.jar --server.port=8082 --presence.camera-index=0
+  open http://127.0.0.1:8082
+  ```
 
-## 6. Camera and port troubleshooting
+### 3. How to stop the server cleanly?
+Click into the terminal window running the app and press:
+<kbd>Ctrl</kbd> + <kbd>C</kbd>
 
-### Choose the correct camera
-
-Camera index **0** is the real webcam that worked on this Windows computer.
-
-Camera index **1** was the OBS virtual camera. If you see an OBS image, stop the app using **Ctrl+C** and start it with camera index 0:
-
-```powershell
-java -jar ".\target\smartvision-ui-v4.jar" --server.port=8081 --presence.camera-index=0
-```
-
-Before starting the application, close OBS, Zoom, Teams, Discord, or other apps that may be using the webcam.
-
-On Windows, also check **Settings → Privacy & security → Camera**, then enable **Camera access** and **Let desktop apps access your camera**.
-
-### Change the port
-
-A port is the local number after the colon in the browser address.
-
-- Default in these instructions: **8081**
-- If 8081 is busy, use **8082**
-
-Windows:
-
-```powershell
-java -jar ".\target\smartvision-ui-v4.jar" --server.port=8082 --presence.camera-index=0
-start http://127.0.0.1:8082
-```
-
-macOS:
-
-```bash
-java -jar target/smartvision-1.0.0.jar --server.port=8082 --presence.camera-index=0
-open http://127.0.0.1:8082
-```
-
-Always open the same port in the browser that was used in the Java command.
-
-## 7. Where your local data is stored
-
-When SmartVision starts for the first time, it creates:
-
+### 4. Where is my data saved?
+All data is stored right inside the project folder in the `data/` directory:
 ```text
-data/
-├── presence.db                         names and attendance records
-├── known_faces/<person-id>/            original registered face photos
+Presence/data/
+├── presence.db                   (SQLite database: names & attendance records)
+├── known_faces/<id>/             (Original uploaded training photos)
 └── models/
-    ├── haarcascade_frontalface_default.xml   face detector
-    └── lbph_model.yml                        trained recognition model
+    ├── haarcascade_frontalface_default.xml (Frontal face detector)
+    └── lbph_model.yml                      (Trained LBPH face model)
 ```
+To back up all attendance and registered faces, simply copy the `data/` folder.
 
-To back up the project, stop SmartVision with **Ctrl+C**, then copy the entire **data** folder to a safe location.
+---
 
-Do not move or edit files inside **data/known_faces** while the application is running.
-
-## 8. How SmartVision works
-
-```text
-Register photos → find the face → train the local recognition model
-                                              ↓
-Webcam image → find face → compare with model → known name / Unknown
-                                              ↓
-                              known name → mark attendance once that day
-```
-
-The project uses:
-
-- **Haar Cascade:** finds face-shaped areas in an image.
-- **LBPH (Local Binary Patterns Histograms):** compares a detected face against the registered faces.
-
-LBPH gives a distance score, not a percentage. Lower means a closer match. Better lighting, a front-facing pose, a good webcam, and more varied training photos improve results.
-
-## 9. Project file guide
-
-Every editable source and configuration file begins with two simple comments: **Purpose** and **Why it is used**.
-
-| File or folder | Simple purpose |
-| --- | --- |
-| **pom.xml** | Maven build instructions and platform-native OpenCV dependency selection. |
-| **start-presence.cmd** | Simple Windows launcher for the packaged application. |
-| **README.md** | This setup, usage, troubleshooting, and explanation guide. |
-| **src/main/java/com/presence/PresenceApplication.java** | Starts the Spring Boot application. |
-| **config/** | Application settings, local folders, database setup, and OpenCV loading. |
-| **model/** | Person, face-photo, and attendance data structures. |
-| **repository/** | SQLite database read and write code. |
-| **service/** | Camera, face recognition, registration, attendance, CSV, and file-storage logic. |
-| **controller/** | Connects browser pages and web requests to the application services. |
-| **resources/application.properties** | Default ports, camera index, upload limits, and recognition settings. |
-| **resources/models/** | Pre-trained OpenCV frontal-face detector. |
-| **resources/templates/** | Browser HTML pages. |
-| **resources/static/css/styles.css** | Website visual design and mobile layout. |
-| **src/test/** | Automatic tests for core database, recognition, and attendance rules. |
-
-## 10. Important limitations
-
-- A physical webcam is required for live recognition.
-- Accuracy depends on lighting, face angle, camera quality, and training photos.
-- Haar Cascade + LBPH is lightweight and suitable for an academic demonstration, not security-grade identification.
-- There is no liveness detection, so do not use this for high-stakes decisions.
-- The app is intentionally local-only: no login accounts, cloud backup, remote access, or mobile app.
-
+## 📄 License & Notes
+* This project is designed for local academic and organizational attendance tracking.
+* Uses OpenCV LBPH face recognition (Local Binary Patterns Histograms) running locally on your CPU with zero external API calls.

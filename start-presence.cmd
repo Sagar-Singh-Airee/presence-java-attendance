@@ -22,9 +22,9 @@ if not defined SMARTVISION_JAVA (
   exit /b 1
 )
 
-set "SMARTVISION_JAR=target\smartvision-ui-v4.jar"
+set "SMARTVISION_JAR=target\presence-camera-fix-v2.jar"
+if not exist "%SMARTVISION_JAR%" set "SMARTVISION_JAR=target\smartvision-ui-v4.jar"
 if not exist "%SMARTVISION_JAR%" set "SMARTVISION_JAR=target\presence-camera-ui-v3.jar"
-if not exist "%SMARTVISION_JAR%" set "SMARTVISION_JAR=target\presence-camera-fix-v2.jar"
 if not exist "%SMARTVISION_JAR%" set "SMARTVISION_JAR=target\smartvision-1.0.0.jar"
 if not exist "%SMARTVISION_JAR%" set "SMARTVISION_JAR=target\presence-1.0.0.jar"
 
@@ -37,6 +37,8 @@ if not exist "%SMARTVISION_JAR%" (
 )
 
 echo Starting SmartVision at http://127.0.0.1:8081
+echo Your browser will open automatically in 4 seconds...
 echo Keep this window open while using SmartVision. Press Ctrl+C to stop it safely.
+start "" cmd /c "timeout /t 4 /nobreak >nul & start http://127.0.0.1:8081"
 "%SMARTVISION_JAVA%" -jar "%SMARTVISION_JAR%" --server.port=8081 %*
 endlocal
