@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 @Controller
 public class PhotoController {
@@ -30,6 +31,6 @@ public class PhotoController {
         if (!Files.isRegularFile(path)) return ResponseEntity.notFound().build();
         String contentType = Files.probeContentType(path);
         MediaType type = contentType == null ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(contentType);
-        return ResponseEntity.ok().contentType(type).body(new UrlResource(path.toUri()));
+        return ResponseEntity.ok().contentType(Objects.requireNonNull(type)).body(new UrlResource(Objects.requireNonNull(path.toUri())));
     }
 }

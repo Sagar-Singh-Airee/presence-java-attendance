@@ -37,7 +37,10 @@ public class RegistrationService {
         List<MultipartFile> files = uploadedFiles == null ? List.of() : uploadedFiles.stream()
                 .filter(file -> !file.isEmpty()).toList();
         if (files.isEmpty()) throw new RegistrationException("Choose at least one face photograph.");
-        long total = files.stream().mapToLong(MultipartFile::getSize).sum();
+        long total = 0L;
+        for (MultipartFile file : files) {
+            total += file.getSize();
+        }
         if (total > MAX_TOTAL_BYTES) throw new RegistrationException("All photographs together must be 16 MB or smaller.");
 
         // Validate every file before writing any database or photograph record.

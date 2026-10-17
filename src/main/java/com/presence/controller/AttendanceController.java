@@ -15,7 +15,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
 @Controller
@@ -37,7 +36,7 @@ public class AttendanceController {
     public ResponseEntity<byte[]> export() {
         byte[] file = csv.export(attendance.all());
         return ResponseEntity.ok()
-                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename("attendance_export.csv").build().toString())
                 .body(file);
     }

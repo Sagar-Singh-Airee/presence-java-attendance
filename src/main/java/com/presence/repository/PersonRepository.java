@@ -60,7 +60,10 @@ public class PersonRepository {
                 LocalDateTime.parse(rs.getString("created_at")), rs.getString("sample_image_path")));
     }
 
-    public int count() { return jdbc.queryForObject("SELECT COUNT(*) FROM persons", Integer.class); }
+    public int count() {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM persons", Integer.class);
+        return count == null ? 0 : count;
+    }
     public int delete(long id) { return jdbc.update("DELETE FROM persons WHERE id = ?", id); }
 
     public static class DuplicatePersonException extends RuntimeException {

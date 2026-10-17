@@ -19,6 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Objects;
 
 @Controller
 public class DashboardController {
@@ -80,7 +81,7 @@ public class DashboardController {
                     .build();
         }
         return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_JPEG)
+                .contentType(Objects.requireNonNull(MediaType.IMAGE_JPEG))
                 .cacheControl(CacheControl.noStore())
                 .body(jpeg);
     }

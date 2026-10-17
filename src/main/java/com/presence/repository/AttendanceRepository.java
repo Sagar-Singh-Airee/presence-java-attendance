@@ -8,11 +8,11 @@ import com.presence.model.AttendanceRecord;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Repository
 public class AttendanceRepository {
@@ -39,7 +39,7 @@ public class AttendanceRepository {
             values.add(date.toString());
         }
         sql.append(" ORDER BY attendance_date DESC, attendance_time DESC, id DESC");
-        return jdbc.query(sql.toString(), (rs, row) -> new AttendanceRecord(rs.getLong("id"),
+        return jdbc.query(Objects.requireNonNull(sql.toString()), (rs, row) -> new AttendanceRecord(rs.getLong("id"),
                 rs.getObject("person_id") == null ? null : rs.getLong("person_id"), rs.getString("person_name"),
                 LocalDate.parse(rs.getString("attendance_date")), LocalTime.parse(rs.getString("attendance_time"))),
                 values.toArray());

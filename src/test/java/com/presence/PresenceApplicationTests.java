@@ -8,7 +8,6 @@ import com.presence.config.OpenCvConfiguration;
 import com.presence.model.Person;
 import com.presence.repository.AttendanceRepository;
 import com.presence.repository.PersonRepository;
-import com.presence.service.AttendanceService;
 import com.presence.service.CsvExportService;
 import com.presence.service.PeopleService;
 import com.presence.service.RegistrationService;
@@ -20,10 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.*;
 

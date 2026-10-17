@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PreDestroy;
 import java.util.List;
 
-import static org.bytedeco.opencv.global.opencv_core.CV_8UC1;
 import static org.bytedeco.opencv.global.opencv_imgcodecs.imencode;
 import static org.bytedeco.opencv.global.opencv_imgproc.FONT_HERSHEY_SIMPLEX;
 import static org.bytedeco.opencv.global.opencv_imgproc.LINE_AA;

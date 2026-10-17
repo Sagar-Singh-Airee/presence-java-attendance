@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteDataSource;
 
+import java.util.Objects;
 import javax.sql.DataSource;
 
 @Configuration
@@ -24,5 +25,5 @@ public class DatabaseConfiguration {
     }
 
     @Bean
-    JdbcTemplate jdbcTemplate(DataSource dataSource) { return new JdbcTemplate(dataSource); }
+    JdbcTemplate jdbcTemplate(DataSource dataSource) { return new JdbcTemplate(Objects.requireNonNull(dataSource)); }
 }
