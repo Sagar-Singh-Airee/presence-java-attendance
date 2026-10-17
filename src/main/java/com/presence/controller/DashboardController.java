@@ -49,11 +49,11 @@ public class DashboardController {
                 while (!Thread.currentThread().isInterrupted()) {
                     byte[] jpeg = camera.nextJpegFrame();
                     if (jpeg != null) {
-                        output.write("--frame\\r\\nContent-Type: image/jpeg\\r\\nContent-Length: ".getBytes());
+                        output.write("--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ".getBytes());
                         output.write(Integer.toString(jpeg.length).getBytes());
-                        output.write("\\r\\n\\r\\n".getBytes());
+                        output.write("\r\n\r\n".getBytes());
                         output.write(jpeg);
-                        output.write("\\r\\n".getBytes());
+                        output.write("\r\n".getBytes());
                         output.flush();
                     }
                     Thread.sleep(jpeg == null ? 500 : 100);

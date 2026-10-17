@@ -4,15 +4,12 @@
  */
 package com.presence.service;
 
-import com.presence.model.FaceSample;
 import com.presence.model.Person;
 import com.presence.repository.AttendanceRepository;
 import com.presence.repository.FaceSampleRepository;
 import com.presence.repository.PersonRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class PeopleService {
@@ -34,7 +31,6 @@ public class PeopleService {
     @Transactional
     public Person delete(long id) {
         Person person = people.findById(id).orElseThrow(() -> new PersonNotFoundException("That registered person no longer exists."));
-        List<FaceSample> existingSamples = samples.findByPersonId(id);
         attendance.clearPersonReference(id); // historical name/date/time records stay intact
         samples.deleteByPersonId(id);
         people.delete(id);

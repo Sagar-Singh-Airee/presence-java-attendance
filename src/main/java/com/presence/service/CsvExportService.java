@@ -13,11 +13,11 @@ import java.util.List;
 @Service
 public class CsvExportService {
     public byte[] export(List<AttendanceRecord> records) {
-        StringBuilder csv = new StringBuilder("Name,Date,Time\\r\\n");
+        StringBuilder csv = new StringBuilder("Name,Date,Time\r\n");
         for (AttendanceRecord record : records) {
             csv.append(escape(record.personName())).append(',')
                     .append(escape(record.attendanceDate().toString())).append(',')
-                    .append(escape(record.attendanceTime().toString())).append("\\r\\n");
+                    .append(escape(record.attendanceTime().toString())).append("\r\n");
         }
         return csv.toString().getBytes(StandardCharsets.UTF_8);
     }
