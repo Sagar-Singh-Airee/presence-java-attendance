@@ -3,5 +3,5 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Something went wrong')}"></head>
-<body><div class="shell narrow-shell"><header th:replace="~{fragments :: navigation('')}"></header><main><section class="panel empty-state error-page"><p class="eyebrow">REQUEST COULD NOT FINISH</p><h1>Something needs another try.</h1><p th:text="${error}">Something went wrong.</p><a class="button primary" th:href="@{/}">Return to dashboard</a></section></main></div></body>
+<body><div class="shell narrow-shell"><header th:replace="~{fragments :: navigation('')}"></header><main><section class="panel empty-state error-page"><p class="eyebrow">REQUEST COULD NOT FINISH</p><h1>Something needs another try.</h1><p th:text="${error}">Something went wrong.</p><a class="button primary" th:href="@{/}">Return to dashboard <span aria-hidden="true">→</span></a></section></main><footer th:replace="~{fragments :: footer}"></footer></div></body>
 </html>

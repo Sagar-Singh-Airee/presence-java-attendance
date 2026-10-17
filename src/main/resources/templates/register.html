@@ -7,20 +7,35 @@
 <div class="shell narrow-shell">
     <header th:replace="~{fragments :: navigation('register')}"></header>
     <main>
-        <section class="page-intro"><p class="eyebrow">ENROLLMENT</p><h1>Register a face</h1><p>Upload clear photographs. If the name already exists, the photos are added to that person instead of creating a duplicate.</p></section>
+        <section class="page-intro editorial-intro"><p class="eyebrow">ENROLLMENT / FACE LIBRARY</p><h1>A small library<br>of clear faces.</h1><p>Use several well-lit photographs. If a name already exists, new photos strengthen that person’s existing recognition profile.</p></section>
         <div th:replace="~{fragments :: messages}"></div>
-        <section class="panel form-panel">
+        <section class="enrollment-layout">
+        <div class="form-panel">
+            <div class="form-panel-heading"><p class="form-step">01 / ADD A PERSON</p><h2>Registration details</h2></div>
             <form th:action="@{/register}" method="post" enctype="multipart/form-data">
                 <label for="name">Full name</label>
-                <input id="name" name="name" type="text" maxlength="100" autocomplete="name" required th:value="${submittedName}">
+                <input id="name" name="name" type="text" maxlength="100" autocomplete="name" placeholder="e.g. Ayesha Sharma" required th:value="${submittedName}">
                 <label for="files">Face photographs</label>
                 <input id="files" name="files" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" multiple required>
-                <p class="field-help">JPG, JPEG, or PNG only; up to 16 MB total. Use front-facing, well-lit photos with one clear face.</p>
-                <button class="button primary" type="submit">Register person</button>
+                <p id="file-summary" class="field-help" aria-live="polite">Choose 3–5 photos. JPG, JPEG, or PNG; 16 MB total maximum.</p>
+                <button class="button primary" type="submit">Add to face library <span aria-hidden="true">→</span></button>
             </form>
+        </div>
+        <aside class="enrollment-aside"><p class="eyebrow">PHOTO CHECKLIST</p><h2>Better photos make better matches.</h2><ul class="check-list"><li>One face in each image</li><li>Eyes visible and face forward</li><li>Even light, no heavy shadow</li><li>Use a few natural variations</li></ul><div class="aside-note"><strong>Your photos stay local.</strong><span>They are saved only in this project’s data folder and used to train the recognition model.</span></div></aside>
         </section>
-        <p class="subtle-link"><a th:href="@{/faces}">View registered people</a></p>
+        <p class="subtle-link"><a th:href="@{/faces}">View the registered people <span aria-hidden="true">→</span></a></p>
     </main>
+    <footer th:replace="~{fragments :: footer}"></footer>
 </div>
+<script>
+    (() => {
+        const files = document.getElementById('files');
+        const summary = document.getElementById('file-summary');
+        files.addEventListener('change', () => {
+            const count = files.files.length;
+            summary.textContent = count ? `${count} photo${count === 1 ? '' : 's'} selected. You can add more before registering.` : 'Choose 3–5 photos. JPG, JPEG, or PNG; 16 MB total maximum.';
+        });
+    })();
+</script>
 </body>
 </html>

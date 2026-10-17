@@ -1,5 +1,5 @@
 /**
- * Purpose: Holds configurable Presence settings.
+ * Purpose: Holds configurable SmartVision settings.
  * Why it is used: It keeps values such as the camera number and recognition threshold in one clear place.
  */
 package com.presence.config;

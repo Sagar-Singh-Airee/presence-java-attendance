@@ -1,9 +1,9 @@
-# Presence — Face Recognition Attendance System
+# SmartVision — Face Recognition Attendance System
 
-> **Purpose:** This file is the complete beginner guide for running, using, explaining, and troubleshooting Presence.
+> **Purpose:** This file is the complete beginner guide for running, using, explaining, and troubleshooting SmartVision.
 > **Why it is used:** Someone can use this project on Windows or macOS without reading the Java source code first.
 
-Presence is a local face-recognition attendance website. Register people with clear face photos, open the live webcam view, and Presence records each recognized person once per day.
+SmartVision is a local face-recognition attendance website. Register people with clear face photos, open the live webcam view, and SmartVision records each recognized person once per day.
 
 Everything stays on the same computer. The local database, original face photos, and face-recognition model are kept in the **data** folder. No cloud account or internet connection is needed after the application has been built.
 
@@ -11,7 +11,7 @@ Everything stays on the same computer. The local database, original face photos,
 
 ## 1. Understand what starts first
 
-Presence is one Spring Boot application.
+SmartVision is one Spring Boot application.
 
 - The **backend** is the Java command that starts the local web server.
 - The **frontend** is already included in the same application as HTML, CSS, and JavaScript pages.
@@ -27,7 +27,7 @@ http://127.0.0.1:8081
 
 ### Step 1: Check Java
 
-Open PowerShell inside the Presence folder and run:
+Open PowerShell inside the SmartVision folder and run:
 
 ```powershell
 java -version
@@ -52,7 +52,7 @@ java -version
 This is the known working command for this Windows computer:
 
 ```powershell
-java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8081 --presence.camera-index=0
+java -jar ".\target\smartvision-ui-v4.jar" --server.port=8081 --presence.camera-index=0
 ```
 
 Wait until the terminal shows:
@@ -75,7 +75,7 @@ Or paste this address into Chrome, Edge, or Firefox:
 http://127.0.0.1:8081
 ```
 
-Keep the first PowerShell window open. To stop Presence safely, click that first window and press:
+Keep the first PowerShell window open. To stop SmartVision safely, click that first window and press:
 
 ```text
 Ctrl+C
@@ -108,7 +108,7 @@ mvn -version
 
 ### Step 2: Build and download project dependencies
 
-Inside the Presence folder, run:
+Inside the SmartVision folder, run:
 
 ```powershell
 mvn clean test
@@ -120,7 +120,7 @@ On the first run, Maven automatically downloads all required dependencies: Sprin
 ### Step 3: Run the newly built package
 
 ```powershell
-java -jar ".\target\presence-1.0.0.jar" --server.port=8081 --presence.camera-index=0
+java -jar ".\target\smartvision-1.0.0.jar" --server.port=8081 --presence.camera-index=0
 ```
 
 Then open:
@@ -131,7 +131,7 @@ start http://127.0.0.1:8081
 
 ## 4. macOS — install, build, and run
 
-The ready-made **presence-camera-fix-v2.jar** in this folder is packaged for Windows. On a Mac, build a Mac package from the source code so Maven downloads the matching Mac OpenCV libraries.
+The ready-made **smartvision-ui-v4.jar** in this folder is packaged for Windows. On a Mac, build a Mac package from the source code so Maven downloads the matching Mac OpenCV libraries.
 
 ### Step 1: Install Homebrew if needed
 
@@ -172,7 +172,7 @@ source ~/.zshrc
 
 ### Step 3: Build and automatically download Mac dependencies
 
-Open Terminal in the Presence project folder.
+Open Terminal in the SmartVision project folder.
 
 For an Apple Silicon Mac (M1, M2, M3, M4), run:
 
@@ -193,7 +193,7 @@ Maven downloads Spring Boot, SQLite, OpenCV, and the correct native Mac OpenCV l
 ### Step 4: Start the backend and open the frontend
 
 ```bash
-java -jar target/presence-1.0.0.jar --server.port=8081 --presence.camera-index=0
+java -jar target/smartvision-1.0.0.jar --server.port=8081 --presence.camera-index=0
 ```
 
 Open a second Terminal window and run:
@@ -204,7 +204,7 @@ open http://127.0.0.1:8081
 
 To stop the app, return to the first Terminal window and press **Ctrl+C**.
 
-## 5. Use Presence
+## 5. Use SmartVision
 
 ### Register a person
 
@@ -244,7 +244,7 @@ Camera index **0** is the real webcam that worked on this Windows computer.
 Camera index **1** was the OBS virtual camera. If you see an OBS image, stop the app using **Ctrl+C** and start it with camera index 0:
 
 ```powershell
-java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8081 --presence.camera-index=0
+java -jar ".\target\smartvision-ui-v4.jar" --server.port=8081 --presence.camera-index=0
 ```
 
 Before starting the application, close OBS, Zoom, Teams, Discord, or other apps that may be using the webcam.
@@ -261,14 +261,14 @@ A port is the local number after the colon in the browser address.
 Windows:
 
 ```powershell
-java -jar ".\target\presence-camera-fix-v2.jar" --server.port=8082 --presence.camera-index=0
+java -jar ".\target\smartvision-ui-v4.jar" --server.port=8082 --presence.camera-index=0
 start http://127.0.0.1:8082
 ```
 
 macOS:
 
 ```bash
-java -jar target/presence-1.0.0.jar --server.port=8082 --presence.camera-index=0
+java -jar target/smartvision-1.0.0.jar --server.port=8082 --presence.camera-index=0
 open http://127.0.0.1:8082
 ```
 
@@ -276,7 +276,7 @@ Always open the same port in the browser that was used in the Java command.
 
 ## 7. Where your local data is stored
 
-When Presence starts for the first time, it creates:
+When SmartVision starts for the first time, it creates:
 
 ```text
 data/
@@ -287,11 +287,11 @@ data/
     └── lbph_model.yml                        trained recognition model
 ```
 
-To back up the project, stop Presence with **Ctrl+C**, then copy the entire **data** folder to a safe location.
+To back up the project, stop SmartVision with **Ctrl+C**, then copy the entire **data** folder to a safe location.
 
 Do not move or edit files inside **data/known_faces** while the application is running.
 
-## 8. How Presence works
+## 8. How SmartVision works
 
 ```text
 Register photos → find the face → train the local recognition model

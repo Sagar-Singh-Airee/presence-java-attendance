@@ -7,21 +7,22 @@
 <div class="shell">
     <header th:replace="~{fragments :: navigation('faces')}"></header>
     <main>
-        <section class="page-intro with-action"><div><p class="eyebrow">FACE LIBRARY</p><h1>Registered faces</h1><p>Original photographs remain only in this project’s local data folder.</p></div><a class="button primary" th:href="@{/register}">Register new person</a></section>
+        <section class="page-intro with-action editorial-intro"><div><p class="eyebrow">FACE LIBRARY</p><h1>Registered people</h1><p>Review who is available for recognition. Original photographs stay in this project’s local data folder.</p></div><a class="button primary" th:href="@{/register}">Register a person <span aria-hidden="true">→</span></a></section>
         <div th:replace="~{fragments :: messages}"></div>
-        <section th:if="${#lists.isEmpty(people)}" class="panel empty-state"><h2>No faces registered yet</h2><p>Register a person with a clear, front-facing photograph to begin.</p><a class="button primary" th:href="@{/register}">Register a face</a></section>
+        <section th:if="${#lists.isEmpty(people)}" class="empty-state"><p class="eyebrow">START HERE</p><h2>No registered people yet</h2><p>Register a person with a clear, front-facing photograph to begin building the recognition library.</p><a class="button primary" th:href="@{/register}">Register a person <span aria-hidden="true">→</span></a></section>
         <section th:unless="${#lists.isEmpty(people)}" class="people-grid">
-            <article th:each="person : ${people}" class="person-card panel">
+            <article th:each="person : ${people}" class="person-card">
                 <img th:if="${person.sampleImagePath != null}" class="person-photo" th:src="@{'/photos/' + ${person.sampleImagePath}}" th:alt="${person.name} + ' registration photograph'">
-                <div th:unless="${person.sampleImagePath != null}" class="person-photo placeholder">No photo</div>
-                <div class="person-card-details"><h2 th:text="${person.name}">Name</h2><p>Registered <time th:text="${#temporals.format(person.createdAt, 'dd MMM yyyy')}">today</time></p>
+                <div th:unless="${person.sampleImagePath != null}" class="person-photo placeholder"><span th:text="${#strings.substring(person.name, 0, 1)}">P</span></div>
+                <div class="person-card-details"><div><p class="card-kicker">READY FOR RECOGNITION</p><h2 th:text="${person.name}">Name</h2><p>Added <time th:text="${#temporals.format(person.createdAt, 'dd MMM yyyy')}">today</time></p></div>
                     <form th:action="@{'/faces/' + ${person.id} + '/delete'}" method="post" th:attr="onsubmit=|return confirm('Remove ${person.name}? Their photographs and recognition data will be deleted, but historical attendance will remain.');|">
-                        <button class="button danger" type="submit">Remove</button>
+                        <button class="button danger" type="submit">Remove person</button>
                     </form>
                 </div>
             </article>
         </section>
     </main>
+    <footer th:replace="~{fragments :: footer}"></footer>
 </div>
 </body>
 </html>

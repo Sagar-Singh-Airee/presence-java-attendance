@@ -1,5 +1,5 @@
 /**
- * Purpose: Starts the Presence application.
+ * Purpose: Starts the SmartVision application.
  * Why it is used: This is the main entry point that tells Spring Boot to start the website.
  */
 package com.presence;

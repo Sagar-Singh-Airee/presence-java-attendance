@@ -5,16 +5,16 @@
 <head th:fragment="head(title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${title} + ' · Presence'">Presence</title>
+    <title th:text="${title} + ' · SmartVision'">SmartVision</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
 <header th:fragment="navigation(active)" class="site-header">
-    <a class="brand" th:href="@{/}"><span class="brand-mark">P</span> Presence</a>
+    <a class="brand" th:href="@{/}" aria-label="SmartVision home"><span class="brand-mark" aria-hidden="true">S</span><span>SmartVision</span><span class="brand-detail">local attendance</span></a>
     <nav aria-label="Main navigation">
-        <a th:classappend="${active == 'home'} ? 'active'" th:href="@{/}">Live dashboard</a>
-        <a th:classappend="${active == 'register'} ? 'active'" th:href="@{/register}">Register face</a>
-        <a th:classappend="${active == 'faces'} ? 'active'" th:href="@{/faces}">Registered faces</a>
+        <a th:classappend="${active == 'home'} ? 'active'" th:href="@{/}">Live</a>
+        <a th:classappend="${active == 'register'} ? 'active'" th:href="@{/register}">Register</a>
+        <a th:classappend="${active == 'faces'} ? 'active'" th:href="@{/faces}">People</a>
         <a th:classappend="${active == 'attendance'} ? 'active'" th:href="@{/attendance}">Attendance</a>
     </nav>
 </header>
@@ -22,5 +22,6 @@
     <p th:if="${success}" class="notice success" th:text="${success}"></p>
     <p th:if="${error}" class="notice error" th:text="${error}"></p>
 </div>
+<footer th:fragment="footer" class="site-footer"><span>SmartVision runs only on this computer.</span><span>Face data is stored locally.</span></footer>
 </body>
 </html>
