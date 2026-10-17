@@ -129,6 +129,20 @@ body::before {
     white-space: nowrap;
 }
 
+.brand-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: block;
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(12, 48, 36, .2);
+    transition: transform var(--t-fast) var(--ease);
+}
+
+.brand:hover .brand-logo {
+    transform: scale(1.06);
+}
+
 .brand-mark {
     display: grid;
     place-items: center;

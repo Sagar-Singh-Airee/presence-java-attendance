@@ -9,11 +9,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
 <header th:fragment="navigation(active)" class="site-header">
-    <a class="brand" th:href="@{/}" aria-label="SmartVision home"><span class="brand-mark" aria-hidden="true">S</span><span>SmartVision</span><span class="brand-detail">local attendance</span></a>
+    <a class="brand" th:href="@{/}" aria-label="SmartVision home"><img class="brand-logo" th:src="@{/images/logo.svg}" width="32" height="32" alt="SmartVision logo"><span>SmartVision</span><span class="brand-detail">local attendance</span></a>
     <nav aria-label="Main navigation">
         <a th:classappend="${active == 'home'} ? 'active'" th:href="@{/}">Live</a>
         <a th:classappend="${active == 'register'} ? 'active'" th:href="@{/register}">Register</a>
