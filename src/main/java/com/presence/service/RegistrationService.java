@@ -4,14 +4,22 @@
  */
 package com.presence.service;
 
+// Person: Data model representing a registered individual in the system.
 import com.presence.model.Person;
+// FaceSampleRepository: Database repository for saving records of face sample images.
 import com.presence.repository.FaceSampleRepository;
+// PersonRepository: Database repository for creating and looking up persons.
 import com.presence.repository.PersonRepository;
+// Mat: OpenCV matrix data structure representing raw uncompressed image pixel data.
 import org.bytedeco.opencv.opencv_core.Mat;
+// Service: Marks this class as a Spring business service component.
 import org.springframework.stereotype.Service;
+// MultipartFile: Represents an uploaded file received over HTTP multipart/form-data.
 import org.springframework.web.multipart.MultipartFile;
 
+// ArrayList: Resizable array list used to collect validated photos before writing to disk.
 import java.util.ArrayList;
+// List: Represents ordered lists of uploaded and validated photo files.
 import java.util.List;
 
 @Service
@@ -37,6 +45,9 @@ public class RegistrationService {
         List<MultipartFile> files = uploadedFiles == null ? List.of() : uploadedFiles.stream()
                 .filter(file -> !file.isEmpty()).toList();
         if (files.isEmpty()) throw new RegistrationException("Choose at least one face photograph.");
+
+        // Calculates total uploaded size across all photos using an explicit loop.
+        // This avoids functional interface method-reference null-safety warnings on MultipartFile::getSize.
         long total = 0L;
         for (MultipartFile file : files) {
             total += file.getSize();
