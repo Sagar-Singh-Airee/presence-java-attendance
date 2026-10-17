@@ -36,7 +36,7 @@
         const camera = document.getElementById('live-camera');
         const refresh = () => {
             camera.onload = () => { camera.classList.add('is-live'); window.setTimeout(refresh, 150); };
-            camera.onerror = () => window.setTimeout(refresh, 1000);
+            camera.onerror = () => { camera.classList.remove('is-live'); window.setTimeout(refresh, 1000); };
             camera.src = '/video-frame?t=' + Date.now();
         };
         refresh();
