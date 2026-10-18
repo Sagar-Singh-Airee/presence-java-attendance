@@ -1,5 +1,5 @@
 <!-- Purpose: Page listing all registered people and their saved face photos. -->
-<!-- Why it is used: It lets users review or remove people from recognition. -->
+<!-- Why it is used: It lets users review, search, and remove people from recognition. -->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Registered faces')}"></head>
@@ -7,16 +7,78 @@
 <div class="shell">
     <header th:replace="~{fragments :: navigation('faces')}"></header>
     <main>
-        <section class="page-intro with-action editorial-intro"><div><p class="eyebrow">FACE LIBRARY</p><h1>Registered people</h1><p>Review who is available for recognition. Original photographs stay in this project’s local data folder.</p></div><a class="button primary" th:href="@{/register}">Register a person <span aria-hidden="true">→</span></a></section>
+        <section class="page-intro with-action editorial-intro">
+            <div>
+                <p class="eyebrow">FACE LIBRARY</p>
+                <h1>Registered people</h1>
+                <p>Review who is available for recognition. Original photographs stay safely in this project’s local storage folder.</p>
+            </div>
+            <div class="action-button-group">
+                <span class="count-badge" th:text="${#lists.size(people)} + ' registered'">0 registered</span>
+                <a class="button primary" th:href="@{/register}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                    Register a person <span aria-hidden="true">→</span>
+                </a>
+            </div>
+        </section>
+
         <div th:replace="~{fragments :: messages}"></div>
-        <section th:if="${#lists.isEmpty(people)}" class="empty-state"><p class="eyebrow">START HERE</p><h2>No registered people yet</h2><p>Register a person with a clear, front-facing photograph to begin building the recognition library.</p><a class="button primary" th:href="@{/register}">Register a person <span aria-hidden="true">→</span></a></section>
-        <section th:unless="${#lists.isEmpty(people)}" class="people-grid">
-            <article th:each="person : ${people}" class="person-card">
-                <img th:if="${person.sampleImagePath != null}" class="person-photo" th:src="@{'/photos/' + ${person.sampleImagePath}}" th:alt="${person.name} + ' registration photograph'">
-                <div th:unless="${person.sampleImagePath != null}" class="person-photo placeholder"><span th:text="${#strings.substring(person.name, 0, 1)}">P</span></div>
-                <div class="person-card-details"><div><p class="card-kicker">READY FOR RECOGNITION</p><h2 th:text="${person.name}">Name</h2><p>Added <time th:text="${#temporals.format(person.createdAt, 'dd MMM yyyy')}">today</time></p></div>
-                    <form th:action="@{'/faces/' + ${person.id} + '/delete'}" method="post" th:attr="onsubmit=|return confirm('Remove ${person.name}? Their photographs and recognition data will be deleted, but historical attendance will remain.');|">
-                        <button class="button danger" type="submit">Remove person</button>
+
+        <!-- Search Bar for Large Libraries -->
+        <div th:unless="${#lists.isEmpty(people)}" class="people-search-bar">
+            <div class="search-input-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input id="people-search" type="search" placeholder="Filter by person name…" aria-label="Filter registered people by name">
+            </div>
+            <span class="search-count-hint" id="search-count" th:text="'Showing all ' + ${#lists.size(people)} + ' people'">Showing all people</span>
+        </div>
+
+        <!-- Empty State -->
+        <section th:if="${#lists.isEmpty(people)}" class="empty-state">
+            <p class="eyebrow">START HERE</p>
+            <h2>No registered people yet</h2>
+            <p>Register a person with a clear, front-facing photograph to begin building the recognition library.</p>
+            <a class="button primary" th:href="@{/register}">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                Register first person <span aria-hidden="true">→</span>
+            </a>
+        </section>
+
+        <!-- People Grid -->
+        <section th:unless="${#lists.isEmpty(people)}" class="people-grid" id="people-grid">
+            <article th:each="person, iter : ${people}" class="person-card" th:attr="data-name=${#strings.toLowerCase(person.name)}" th:style="'animation-delay: ' + ${iter.index * 40} + 'ms;'">
+                <div class="photo-container">
+                    <img th:if="${person.sampleImagePath != null}" class="person-photo" th:src="@{'/photos/' + ${person.sampleImagePath}}" th:alt="${person.name} + ' registration photograph'" loading="lazy">
+                    <div th:unless="${person.sampleImagePath != null}" class="person-photo placeholder">
+                        <span th:text="${#strings.substring(person.name, 0, 1)}">P</span>
+                    </div>
+                    <span class="person-status-badge">
+                        <span class="badge-dot"></span> Active
+                    </span>
+                </div>
+
+                <div class="person-card-details">
+                    <div class="person-info-block">
+                        <p class="card-kicker">ENROLLED PROFILE</p>
+                        <h2 class="person-name-heading" th:text="${person.name}">Name</h2>
+                        <p class="person-meta-time">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            Enrolled <time th:text="${#temporals.format(person.createdAt, 'dd MMM yyyy')}">today</time>
+                        </p>
+                    </div>
+
+                    <!-- Safe Two-Step Delete Form (No Ugly Native Browser Popup) -->
+                    <form th:action="@{'/faces/' + ${person.id} + '/delete'}" method="post" class="delete-person-form">
+                        <div class="delete-btn-group">
+                            <button class="button danger delete-initial-btn" type="button" aria-label="Remove person">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                <span>Remove</span>
+                            </button>
+                            <div class="delete-confirm-bar" style="display: none;">
+                                <button class="button danger delete-confirm-btn" type="submit">Sure? Remove</button>
+                                <button class="button text-button delete-cancel-btn" type="button">Cancel</button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </article>
@@ -24,5 +86,54 @@
     </main>
     <footer th:replace="~{fragments :: footer}"></footer>
 </div>
+
+<script>
+    (() => {
+        // Quick Live Client-Side Search
+        const searchInput = document.getElementById('people-search');
+        const cards = document.querySelectorAll('.person-card');
+        const countHint = document.getElementById('search-count');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                let visible = 0;
+                cards.forEach(card => {
+                    const name = card.getAttribute('data-name') || '';
+                    if (!query || name.includes(query)) {
+                        card.style.display = 'grid';
+                        visible++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                if (countHint) {
+                    countHint.textContent = query
+                        ? `Showing ${visible} of ${cards.length} people`
+                        : `Showing all ${cards.length} people`;
+                }
+            });
+        }
+
+        // Two-Step Safe Delete Buttons (No native confirm popup)
+        document.querySelectorAll('.delete-person-form').forEach(form => {
+            const initialBtn = form.querySelector('.delete-initial-btn');
+            const confirmBar = form.querySelector('.delete-confirm-bar');
+            const cancelBtn = form.querySelector('.delete-cancel-btn');
+
+            if (initialBtn && confirmBar && cancelBtn) {
+                initialBtn.addEventListener('click', () => {
+                    initialBtn.style.display = 'none';
+                    confirmBar.style.display = 'inline-flex';
+                });
+
+                cancelBtn.addEventListener('click', () => {
+                    confirmBar.style.display = 'none';
+                    initialBtn.style.display = 'inline-flex';
+                });
+            }
+        });
+    })();
+</script>
 </body>
 </html>

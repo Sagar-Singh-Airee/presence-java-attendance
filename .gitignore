@@ -1,22 +1,70 @@
+# =============================================================================
+# SmartVision — Git Ignore Configuration
+# Purpose: Prevents compiled binaries, private biometric data, local databases,
+#          IDE configurations, and operating system clutter from entering Git.
+# =============================================================================
 
-# Purpose: Lists files and folders Git should not save as source code.
-# Why it is used: It keeps generated files, private local data, and large temporary tools out of the project history.
-
-# Maven build output
+# ─── Compiled Java & Build Artifacts ───────────────────────────────────────────
 target/
 target_test-classes/
+BOOT-INF/
+*.class
+*.jar
+*.war
+*.ear
 
-# Local biometric data and database
+# ─── Biometric Privacy & Local SQLite Database ─────────────────────────────────
+# NEVER commit personal face photographs or attendance databases to GitHub!
 data/known_faces/
-data/presence.db
+data/known_faces/*
+data/presence.db*
 data/models/lbph_model.yml
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 
-# Logs
+# ─── Logs & Diagnostics ────────────────────────────────────────────────────────
 *.log
+logs/
+*.out
 
-# IDE settings
-.idea/
-.vscode/
-
-# Local development tools
+# ─── Local Development Tools & Staging ─────────────────────────────────────────
 build-tools/
+extracted-libs/
+staging/
+
+# ─── IDE & Editor Configurations ───────────────────────────────────────────────
+# VS Code
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA / Eclipse / NetBeans
+.idea/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+bin/
+
+# ─── OS-Generated & Temporary Files ────────────────────────────────────────────
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.directory

@@ -5,6 +5,7 @@
 <head th:fragment="head(title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#155240">
     <title th:text="${title} + ' · SmartVision'">SmartVision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,18 +15,38 @@
 </head>
 <body>
 <header th:fragment="navigation(active)" class="site-header">
-    <a class="brand" th:href="@{/}" aria-label="SmartVision home"><img class="brand-logo" th:src="@{/images/logo.svg}" width="32" height="32" alt="SmartVision logo"><span>SmartVision</span><span class="brand-detail">local attendance</span></a>
+    <a class="brand" th:href="@{/}" aria-label="SmartVision home">
+        <img class="brand-logo" th:src="@{/images/logo.svg}" width="32" height="32" alt="SmartVision logo">
+        <span>SmartVision</span>
+        <span class="brand-detail">local attendance</span>
+    </a>
     <nav aria-label="Main navigation">
-        <a th:classappend="${active == 'home'} ? 'active'" th:href="@{/}">Live</a>
-        <a th:classappend="${active == 'register'} ? 'active'" th:href="@{/register}">Register</a>
-        <a th:classappend="${active == 'faces'} ? 'active'" th:href="@{/faces}">People</a>
-        <a th:classappend="${active == 'attendance'} ? 'active'" th:href="@{/attendance}">Attendance</a>
+        <a th:classappend="${active == 'home'} ? 'active'" th:href="@{/}" title="Live Camera Feed">
+            <svg class="nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            <span>Live</span>
+        </a>
+        <a th:classappend="${active == 'register'} ? 'active'" th:href="@{/register}" title="Enroll New Face">
+            <svg class="nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            <span>Register</span>
+        </a>
+        <a th:classappend="${active == 'faces'} ? 'active'" th:href="@{/faces}" title="Face Library">
+            <svg class="nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>People</span>
+        </a>
+        <a th:classappend="${active == 'attendance'} ? 'active'" th:href="@{/attendance}" title="Attendance Records">
+            <svg class="nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="m9 16 2 2 4-4"></path></svg>
+            <span>Attendance</span>
+        </a>
     </nav>
 </header>
 <div th:fragment="messages" class="messages">
     <p th:if="${success}" class="notice success" th:text="${success}"></p>
+    <p th:if="${warning}" class="notice warning" th:text="${warning}"></p>
     <p th:if="${error}" class="notice error" th:text="${error}"></p>
 </div>
-<footer th:fragment="footer" class="site-footer"><span>SmartVision runs only on this computer.</span><span>Face data is stored locally.</span></footer>
+<footer th:fragment="footer" class="site-footer">
+    <span>SmartVision runs 100% locally on this machine.</span>
+    <span>Biometric data &amp; records never leave your local storage.</span>
+</footer>
 </body>
 </html>

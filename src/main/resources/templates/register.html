@@ -1,5 +1,5 @@
-<!-- Purpose: Face-registration form page. -->
-<!-- Why it is used: It lets a user provide a name and face photos for training. -->
+<!-- Purpose: Face-registration form with drag-and-drop photo upload and real-time thumbnail previews. -->
+<!-- Why it is used: It lets a user provide a name and face photos with immediate visual feedback. -->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Register face')}"></head>
@@ -7,34 +7,211 @@
 <div class="shell narrow-shell">
     <header th:replace="~{fragments :: navigation('register')}"></header>
     <main>
-        <section class="page-intro editorial-intro"><p class="eyebrow">ENROLLMENT / FACE LIBRARY</p><h1>A small library<br>of clear faces.</h1><p>Use several well-lit photographs. If a name already exists, new photos strengthen that person’s existing recognition profile.</p></section>
-        <div th:replace="~{fragments :: messages}"></div>
-        <section class="enrollment-layout">
-        <div class="form-panel">
-            <div class="form-panel-heading"><p class="form-step">01 / ADD A PERSON</p><h2>Registration details</h2></div>
-            <form th:action="@{/register}" method="post" enctype="multipart/form-data">
-                <label for="name">Full name</label>
-                <input id="name" name="name" type="text" maxlength="100" autocomplete="name" placeholder="e.g. Ayesha Sharma" required th:value="${submittedName}">
-                <label for="files">Face photographs</label>
-                <input id="files" name="files" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" multiple required>
-                <p id="file-summary" class="field-help" aria-live="polite">Choose 3–5 photos. JPG, JPEG, or PNG; 16 MB total maximum.</p>
-                <button class="button primary" type="submit">Add to face library <span aria-hidden="true">→</span></button>
-            </form>
-        </div>
-        <aside class="enrollment-aside"><p class="eyebrow">PHOTO CHECKLIST</p><h2>Better photos make better matches.</h2><ul class="check-list"><li>One face in each image</li><li>Eyes visible and face forward</li><li>Even light, no heavy shadow</li><li>Use a few natural variations</li></ul><div class="aside-note"><strong>Your photos stay local.</strong><span>They are saved only in this project’s data folder and used to train the recognition model.</span></div></aside>
+        <section class="page-intro editorial-intro">
+            <p class="eyebrow">ENROLLMENT / FACE LIBRARY</p>
+            <h1>Enroll a new person</h1>
+            <p>Use clear, front-facing photographs. If a name already exists, new photos strengthen that person’s existing recognition profile.</p>
         </section>
-        <p class="subtle-link"><a th:href="@{/faces}">View the registered people <span aria-hidden="true">→</span></a></p>
+
+        <div th:replace="~{fragments :: messages}"></div>
+
+        <section class="enrollment-layout">
+            <div class="form-panel">
+                <div class="form-panel-heading">
+                    <p class="form-step">01 / REGISTRATION DETAILS</p>
+                    <h2>Personal information</h2>
+                </div>
+                <form th:action="@{/register}" method="post" enctype="multipart/form-data" id="registration-form">
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="name">Full name</label>
+                            <span class="char-count" id="name-char-count">0 / 100</span>
+                        </div>
+                        <input id="name" name="name" type="text" maxlength="100" autocomplete="name" placeholder="e.g. Ayesha Sharma" required th:value="${submittedName}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Face photographs</label>
+                        <!-- Drag-and-Drop Dropzone -->
+                        <div class="dropzone" id="photo-dropzone" tabindex="0" role="button" aria-label="Drop face photos here or click to browse">
+                            <input id="files" name="files" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" multiple required class="dropzone-hidden-input">
+                            <div class="dropzone-prompt">
+                                <div class="dropzone-icon-wrap" aria-hidden="true">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                </div>
+                                <strong class="dropzone-title">Drag &amp; drop photos here</strong>
+                                <span class="dropzone-subtitle">or <span class="dropzone-browse-link">click to browse</span> from your computer</span>
+                                <span class="dropzone-hint">Recommended: 3–5 front-facing photos • JPG or PNG (16 MB max)</span>
+                            </div>
+                        </div>
+
+                        <!-- Real-Time Photo Thumbnail Previews -->
+                        <div class="preview-strip" id="preview-strip" style="display: none;">
+                            <div class="preview-header">
+                                <span id="file-summary" class="preview-count">0 photos selected</span>
+                                <button type="button" class="button text-button preview-clear-btn" id="clear-photos-btn">Clear all</button>
+                            </div>
+                            <div class="preview-grid" id="preview-grid"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="button primary submit-enroll-btn" type="submit" id="submit-btn">
+                            <span class="btn-text">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                                <span>Add to face library</span> <span aria-hidden="true">→</span>
+                            </span>
+                            <span class="btn-loading" style="display: none;">
+                                <span class="spinner" aria-hidden="true"></span>
+                                <span>Training model…</span>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <aside class="enrollment-aside">
+                <p class="eyebrow">PHOTO CHECKLIST</p>
+                <h2>Better photos make better matches.</h2>
+                <ul class="check-list">
+                    <li>One face clearly visible in each image</li>
+                    <li>Eyes open and looking towards camera</li>
+                    <li>Even lighting without heavy facial shadows</li>
+                    <li>Include a couple of natural angle variations</li>
+                </ul>
+                <div class="aside-note">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <div>
+                        <strong>Your photos stay local.</strong>
+                        <span>Original images are stored only on this computer to train OpenCV’s local LBPH model.</span>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <p class="subtle-link">
+            <a th:href="@{/faces}">View all registered people in the library <span aria-hidden="true">→</span></a>
+        </p>
     </main>
     <footer th:replace="~{fragments :: footer}"></footer>
 </div>
+
 <script>
     (() => {
-        const files = document.getElementById('files');
-        const summary = document.getElementById('file-summary');
-        files.addEventListener('change', () => {
-            const count = files.files.length;
-            summary.textContent = count ? `${count} photo${count === 1 ? '' : 's'} selected. You can add more before registering.` : 'Choose 3–5 photos. JPG, JPEG, or PNG; 16 MB total maximum.';
-        });
+        const fileInput = document.getElementById('files');
+        const dropzone = document.getElementById('photo-dropzone');
+        const previewStrip = document.getElementById('preview-strip');
+        const previewGrid = document.getElementById('preview-grid');
+        const summaryText = document.getElementById('file-summary');
+        const clearBtn = document.getElementById('clear-photos-btn');
+        const nameInput = document.getElementById('name');
+        const charCount = document.getElementById('name-char-count');
+        const form = document.getElementById('registration-form');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Character counter
+        if (nameInput && charCount) {
+            const updateCount = () => {
+                charCount.textContent = `${nameInput.value.length} / 100`;
+            };
+            nameInput.addEventListener('input', updateCount);
+            updateCount();
+        }
+
+        // Dropzone click opens native file picker
+        if (dropzone && fileInput) {
+            dropzone.addEventListener('click', () => fileInput.click());
+            dropzone.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileInput.click();
+                }
+            });
+
+            // Drag & drop visual effects
+            ['dragenter', 'dragover'].forEach(name => {
+                dropzone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('dropzone-active');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(name => {
+                dropzone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('dropzone-active');
+                });
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length) {
+                    fileInput.files = dt.files;
+                    renderPreviews(dt.files);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files) {
+                    renderPreviews(fileInput.files);
+                }
+            });
+        }
+
+        // Render photo thumbnail previews
+        function renderPreviews(files) {
+            if (!previewGrid || !previewStrip) return;
+            previewGrid.innerHTML = '';
+
+            const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (!validFiles.length) {
+                previewStrip.style.display = 'none';
+                return;
+            }
+
+            previewStrip.style.display = 'block';
+            if (summaryText) {
+                summaryText.textContent = `${validFiles.length} photo${validFiles.length === 1 ? '' : 's'} ready for training`;
+            }
+
+            validFiles.slice(0, 10).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'preview-thumb';
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = file.name;
+                    thumb.appendChild(img);
+                    previewGrid.appendChild(thumb);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Clear button
+        if (clearBtn && fileInput) {
+            clearBtn.addEventListener('click', () => {
+                fileInput.value = '';
+                if (previewGrid) previewGrid.innerHTML = '';
+                if (previewStrip) previewStrip.style.display = 'none';
+            });
+        }
+
+        // Submit button loading animation
+        if (form && submitBtn) {
+            form.addEventListener('submit', () => {
+                const btnText = submitBtn.querySelector('.btn-text');
+                const btnLoading = submitBtn.querySelector('.btn-loading');
+                if (btnText && btnLoading) {
+                    btnText.style.display = 'none';
+                    btnLoading.style.display = 'inline-flex';
+                    submitBtn.disabled = true;
+                }
+            });
+        }
     })();
 </script>
 </body>

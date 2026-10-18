@@ -1,45 +1,243 @@
-<!-- Purpose: Main dashboard page showing attendance totals and the live camera view. -->
-<!-- Why it is used: This is the first page users see when they open SmartVision. -->
+<!-- Purpose: Main dashboard showing real-time camera recognition feed and daily attendance stats. -->
+<!-- Why it is used: It gives users immediate, responsive face-recognition attendance scanning. -->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments :: head('Live dashboard')}"></head>
+<head th:replace="~{fragments :: head('Live scanner')}"></head>
 <body>
 <div class="shell">
     <header th:replace="~{fragments :: navigation('home')}"></header>
     <main class="dashboard-main">
-        <section class="hero dashboard-hero">
-            <div class="hero-copy"><p class="eyebrow">LOCAL ATTENDANCE / TODAY</p><h1>Know who is here.<br><em>Keep the record simple.</em></h1><p>SmartVision recognizes registered faces from this computer’s camera and records each person once per day.</p><div class="hero-actions"><a class="button primary" th:href="@{/register}">Register a person <span aria-hidden="true">→</span></a><a class="text-link" th:href="@{/attendance}">View attendance <span aria-hidden="true">→</span></a></div></div>
-            <aside class="hero-context" aria-label="How SmartVision protects data"><p>Private by default</p><strong>Photos and attendance stay on this computer.</strong><span>No cloud account. No remote access.</span></aside>
-        </section>
-        <div th:replace="~{fragments :: messages}"></div>
-        <section class="metrics" aria-label="Attendance summary">
-            <article class="metric"><span class="metric-kicker">Today</span><strong th:text="${todayCount}">0</strong><small>people marked present</small></article>
-            <article class="metric"><span class="metric-kicker">Library</span><strong th:text="${peopleCount}">0</strong><small>people ready for recognition</small></article>
-            <article class="metric status"><span class="metric-kicker">Camera status</span><strong th:text="${cameraStatus}">Checking camera…</strong><small>Attendance history stays available without a camera.</small></article>
-        </section>
-        <section class="live-workspace" aria-label="Live recognition workspace">
-            <div class="camera-panel">
-                <div class="section-heading"><div><p class="eyebrow">LIVE VIEW</p><h2>Recognition feed</h2></div><span class="live-state"><i aria-hidden="true"></i>Scanning</span></div>
-                <div class="camera-frame">
-                    <img id="live-camera" alt="Live camera feed. If no webcam is available, no image is shown.">
-                    <div class="camera-empty"><strong>Waiting for a camera frame</strong><span th:text="${cameraStatus}">Camera will connect when the live feed starts.</span></div>
-                </div>
-                <div class="camera-caption"><span>Green label = recognized person</span><span>Unknown faces are never recorded</span></div>
+        <!-- Compact Header with Quick Stats -->
+        <section class="live-hero-header">
+            <div>
+                <p class="eyebrow">REAL-TIME ATTENDANCE</p>
+                <h1 class="live-title">Live recognition scanner</h1>
             </div>
-            <aside class="recognition-guide"><p class="eyebrow">THE CHECK</p><h2>What happens in front of the camera</h2><ol><li><span>01</span><p><strong>A face is found</strong>SmartVision checks each camera frame locally.</p></li><li><span>02</span><p><strong>It is compared</strong>The face is matched against the registered library.</p></li><li><span>03</span><p><strong>Attendance is saved</strong>A confident match is recorded once for today.</p></li></ol><a class="text-link" th:href="@{/faces}">Manage people <span aria-hidden="true">→</span></a></aside>
+            <div class="live-stats-bar">
+                <a class="stat-pill" th:href="@{/attendance}" title="View today's attendance log">
+                    <span class="stat-pill-label">Today:</span>
+                    <strong class="stat-pill-value" th:text="${todayCount} + ' Present'">0 Present</strong>
+                </a>
+                <a class="stat-pill" th:href="@{/faces}" title="View registered face library">
+                    <span class="stat-pill-label">Library:</span>
+                    <strong class="stat-pill-value" th:text="${peopleCount} + ' Faces'">0 Faces</strong>
+                </a>
+                <div class="stat-pill status-pill">
+                    <span class="status-dot-pulse"></span>
+                    <span class="stat-pill-value" th:text="${cameraStatus}">Active</span>
+                </div>
+            </div>
         </section>
+
+        <div th:replace="~{fragments :: messages}"></div>
+
+        <!-- Live Camera Stage -->
+        <section class="camera-stage" aria-label="Live face recognition feed">
+            <div class="camera-viewport-card" id="camera-card">
+                <!-- Top HUD Controls inside camera frame -->
+                <div class="camera-hud-top">
+                    <span class="hud-pill hud-camera-info">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                        <span>Camera Feed</span>
+                    </span>
+                    <span class="live-state" id="stream-status">
+                        <i aria-hidden="true"></i>
+                        <span>Scanning</span>
+                    </span>
+                </div>
+
+                <!-- Video Frame Image & Fallback State -->
+                <div class="camera-media-wrap">
+                    <img id="live-camera" alt="Live camera feed from OpenCV scanner" class="camera-stream-img">
+                    <div class="camera-empty" id="camera-empty-state">
+                        <div class="radar-scan-anim" aria-hidden="true">
+                            <div class="radar-ring"></div>
+                            <div class="radar-ring"></div>
+                            <div class="radar-sweep"></div>
+                        </div>
+                        <strong>Connecting to camera…</strong>
+                        <span th:text="${cameraStatus}">Camera will connect when the live feed starts.</span>
+                    </div>
+                </div>
+
+                <!-- Bottom HUD Bar: Real-Time Clock & Fullscreen -->
+                <div class="camera-hud-bottom">
+                    <div class="camera-clock" id="live-clock">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <span id="clock-time">--:--:--</span>
+                        <span class="clock-date" id="clock-date">--------</span>
+                    </div>
+                    <div class="camera-hud-actions">
+                        <button class="hud-btn" id="fs-btn" type="button" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera Caption & Guidelines Bar -->
+            <div class="camera-guide-bar">
+                <div class="guide-indicator">
+                    <span class="guide-chip green-chip"><span class="chip-dot"></span> Green Box = Recognized &amp; Logged</span>
+                    <span class="guide-chip red-chip"><span class="chip-dot"></span> Red Box = Unknown Face (Ignored)</span>
+                </div>
+                <div class="guide-privacy-note">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <span>100% On-Device Processing</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Summary Metrics Grid -->
+        <section class="live-cards-grid" aria-label="Key system summaries">
+            <a class="summary-card" th:href="@{/attendance}">
+                <div class="card-icon-wrap icon-green">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+                <div class="card-text">
+                    <span class="card-metric-num" th:text="${todayCount}">0</span>
+                    <strong class="card-metric-title">Today's Attendance</strong>
+                    <span class="card-metric-hint">View full daily log →</span>
+                </div>
+            </a>
+
+            <a class="summary-card" th:href="@{/faces}">
+                <div class="card-icon-wrap icon-forest">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+                <div class="card-text">
+                    <span class="card-metric-num" th:text="${peopleCount}">0</span>
+                    <strong class="card-metric-title">Face Library</strong>
+                    <span class="card-metric-hint">Manage enrolled people →</span>
+                </div>
+            </a>
+
+            <div class="summary-card stat-status-card">
+                <div class="card-icon-wrap icon-amber">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                </div>
+                <div class="card-text">
+                    <span class="status-label-badge" th:text="${cameraStatus}">Ready</span>
+                    <strong class="card-metric-title">Camera &amp; Model</strong>
+                    <span class="card-metric-hint">Recognition active</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3-Step Process Horizontal Bar -->
+        <section class="process-strip" aria-label="How recognition works">
+            <div class="process-step">
+                <span class="step-num">01</span>
+                <div>
+                    <strong>Face Detection</strong>
+                    <p>OpenCV scans each video frame for front-facing faces in real time.</p>
+                </div>
+            </div>
+            <div class="process-divider" aria-hidden="true">→</div>
+            <div class="process-step">
+                <span class="step-num">02</span>
+                <div>
+                    <strong>LBPH Matching</strong>
+                    <p>Detected face is compared against trained local histograms.</p>
+                </div>
+            </div>
+            <div class="process-divider" aria-hidden="true">→</div>
+            <div class="process-step">
+                <span class="step-num">03</span>
+                <div>
+                    <strong>Attendance Logged</strong>
+                    <p>When confidence threshold is met, person is marked present once today.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Action Row -->
+        <div class="live-action-footer">
+            <a class="button primary" th:href="@{/register}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                Register New Person <span aria-hidden="true">→</span>
+            </a>
+            <a class="button secondary" th:href="@{/attendance}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="m9 16 2 2 4-4"></path></svg>
+                View Attendance Records
+            </a>
+            <a class="button text-button" th:href="@{/faces}">Manage Registered People</a>
+        </div>
     </main>
     <footer th:replace="~{fragments :: footer}"></footer>
 </div>
+
 <script>
     (() => {
+        // Live camera feed stream with automatic reconnect
         const camera = document.getElementById('live-camera');
+        const emptyState = document.getElementById('camera-empty-state');
+        const statusBadge = document.getElementById('stream-status');
+        let failCount = 0;
+
         const refresh = () => {
-            camera.onload = () => { camera.classList.add('is-live'); window.setTimeout(refresh, 150); };
-            camera.onerror = () => { camera.classList.remove('is-live'); window.setTimeout(refresh, 1000); };
-            camera.src = '/video-frame?t=' + Date.now();
+            const nextFrame = new Image();
+            nextFrame.onload = () => {
+                camera.src = nextFrame.src;
+                camera.classList.add('is-live');
+                if (emptyState) emptyState.style.display = 'none';
+                if (statusBadge) {
+                    statusBadge.classList.remove('status-offline');
+                    statusBadge.querySelector('span').textContent = 'Scanning';
+                }
+                failCount = 0;
+                window.setTimeout(refresh, 140);
+            };
+            nextFrame.onerror = () => {
+                failCount++;
+                if (failCount > 3) {
+                    camera.classList.remove('is-live');
+                    if (emptyState) emptyState.style.display = 'flex';
+                    if (statusBadge) {
+                        statusBadge.classList.add('status-offline');
+                        statusBadge.querySelector('span').textContent = 'Connecting…';
+                    }
+                }
+                window.setTimeout(refresh, 1000);
+            };
+            nextFrame.src = '/video-frame?t=' + Date.now();
         };
+
         refresh();
+
+        // Real-Time HUD Clock
+        const timeEl = document.getElementById('clock-time');
+        const dateEl = document.getElementById('clock-date');
+        const updateClock = () => {
+            const now = new Date();
+            let hours = now.getHours();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const strHours = String(hours).padStart(2, '0');
+            const strMinutes = String(now.getMinutes()).padStart(2, '0');
+            const strSeconds = String(now.getSeconds()).padStart(2, '0');
+            if (timeEl) timeEl.textContent = `${strHours}:${strMinutes}:${strSeconds} ${ampm}`;
+            if (dateEl) {
+                const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+                dateEl.textContent = now.toLocaleDateString('en-US', options);
+            }
+        };
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Fullscreen Toggle
+        const fsBtn = document.getElementById('fs-btn');
+        const card = document.getElementById('camera-card');
+        if (fsBtn && card) {
+            fsBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    card.requestFullscreen().catch(() => {});
+                } else {
+                    document.exitFullscreen().catch(() => {});
+                }
+            });
+        }
     })();
 </script>
 </body>

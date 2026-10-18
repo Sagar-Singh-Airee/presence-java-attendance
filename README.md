@@ -239,10 +239,12 @@ Once open at **`http://127.0.0.1:8081`**:
   * 🟩 **Green Box + Name:** Face recognized! Attendance is recorded automatically once for today.
   * 🔴 **Red Box + "Unknown":** Face not yet registered (never recorded to attendance).
 
-### 3. Review & Export Records
+### 3. Review, Export & Import Records
 * Click **Attendance** (`/attendance`) to view everyone marked present today.
-* Filter by person name or pick any date.
-* Click **Download CSV ↓** to download a clean spreadsheet that opens directly in Microsoft Excel, Google Sheets, or Numbers.
+* Filter by person name or pick any specific calendar date.
+* **Download Excel Sheet (.xls):** Downloads a beautifully styled spreadsheet featuring SmartVision forest-green headers, alternating zebra rows, proper column widths, and centered "Present" badges that opens directly in Microsoft Excel, Apple Numbers, and LibreOffice.
+* **Download CSV (.csv):** Downloads a clean, standard UTF-8 CSV file with Byte Order Mark (BOM) for universal software and database compatibility.
+* **Import Attendance CSV:** Have past attendance records from another spreadsheet or system? Use the **Import CSV** panel to upload your file. SmartVision intelligently links registered persons and automatically ignores duplicate records on the same day.
 
 ### 4. Manage Face Library
 * Click **People** (`/faces`) to view all registered persons and their profile preview.

@@ -1,5 +1,5 @@
-<!-- Purpose: Attendance history page with filters and CSV export. -->
-<!-- Why it is used: It lets users view and download the records created by recognition. -->
+<!-- Purpose: Attendance history page with student-wise attendance summaries, check-in logs, and Excel/CSV tools. -->
+<!-- Why it is used: It gives teachers and administrators complete student attendance history and daily logs. -->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Attendance records')}"></head>
@@ -7,25 +7,326 @@
 <div class="shell">
     <header th:replace="~{fragments :: navigation('attendance')}"></header>
     <main>
-        <section class="page-intro with-action editorial-intro"><div><p class="eyebrow">HISTORY / RECORDS</p><h1>Attendance records</h1><p>Each registered name appears once per local calendar day. Download a clean CSV whenever you need it.</p></div><a class="button secondary" th:href="@{/attendance/export.csv}">Download CSV <span aria-hidden="true">↓</span></a></section>
-        <div th:replace="~{fragments :: messages}"></div>
-        <section class="filters">
-            <p class="form-step">FILTER THE RECORD</p>
-            <form th:action="@{/attendance}" method="get">
-                <div><label for="name">Person name</label><input id="name" name="name" type="search" placeholder="Search a name" th:value="${selectedName}"></div>
-                <div><label for="date">Attendance date</label><input id="date" name="date" type="date" th:value="${selectedDate}"></div>
-                <div class="filter-actions"><button class="button primary" type="submit">Apply filters</button><a class="button text-button" th:href="@{/attendance}">Clear filters</a></div>
-            </form>
+        <!-- Page Intro & Export Actions -->
+        <section class="page-intro with-action editorial-intro">
+            <div>
+                <p class="eyebrow">ATTENDANCE INTELLIGENCE</p>
+                <h1>Attendance &amp; student history</h1>
+                <p>Track cumulative attendance per student, view daily check-in logs, and export styled spreadsheets.</p>
+            </div>
+            <div class="action-button-group">
+                <a class="button primary" th:href="${hasFilters} ? @{/attendance/export-filtered.xls(name=${selectedName},date=${selectedDate})} : @{/attendance/export.xls}" title="Download styled Microsoft Excel spreadsheet">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg>
+                    <span th:text="${hasFilters} ? 'Export Excel (Filtered)' : 'Download Excel'">Download Excel</span> <span aria-hidden="true">↓</span>
+                </a>
+                <a class="button secondary" th:href="${hasFilters} ? @{/attendance/export-filtered.csv(name=${selectedName},date=${selectedDate})} : @{/attendance/export.csv}" title="Download clean CSV spreadsheet">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span th:text="${hasFilters} ? 'CSV (Filtered)' : 'Download CSV'">Download CSV</span> <span aria-hidden="true">↓</span>
+                </a>
+            </div>
         </section>
-        <section class="table-panel">
-            <div class="section-heading"><div><p class="eyebrow">RESULTS</p><h2>Daily attendance</h2></div><span class="count" th:text="${#lists.size(records)} + ' record(s)'">0 records</span></div>
-            <div th:if="${#lists.isEmpty(records)}" class="empty-state compact"><p>No matching attendance records were found. Try clearing a filter or return after a recognized person is marked present.</p></div>
-            <div th:unless="${#lists.isEmpty(records)}" class="table-wrap"><table><thead><tr><th>Person</th><th>Date</th><th>Time</th></tr></thead><tbody>
-                <tr th:each="record : ${records}"><td th:text="${record.personName}">Person</td><td th:text="${#temporals.format(record.attendanceDate, 'dd MMM yyyy')}">Date</td><td th:text="${#temporals.format(record.attendanceTime, 'HH:mm:ss')}">Time</td></tr>
-            </tbody></table></div>
+
+        <div th:replace="~{fragments :: messages}"></div>
+
+        <!-- High-Level Attendance Metrics Strip -->
+        <section class="attendance-summary-metrics" aria-label="Student attendance statistics">
+            <div class="summary-metric-card">
+                <span class="metric-card-kicker">Tracked Students</span>
+                <strong class="metric-card-num" th:text="${totalStudents}">0</strong>
+                <span class="metric-card-sub">Enrolled &amp; historic records</span>
+            </div>
+            <div class="summary-metric-card stat-card-present">
+                <span class="metric-card-kicker">Present Today</span>
+                <strong class="metric-card-num" th:text="${studentsPresentToday}">0</strong>
+                <span class="metric-card-sub">Checked in on camera</span>
+            </div>
+            <div class="summary-metric-card stat-card-absent">
+                <span class="metric-card-kicker">Absent / Not Seen</span>
+                <strong class="metric-card-num" th:text="${studentsAbsentToday}">0</strong>
+                <span class="metric-card-sub">Pending check-in today</span>
+            </div>
+            <div class="summary-metric-card">
+                <span class="metric-card-kicker">Total Check-ins</span>
+                <strong class="metric-card-num" th:text="${#lists.size(records)}">0</strong>
+                <span class="metric-card-sub">All historical entries</span>
+            </div>
+        </section>
+
+        <!-- View Navigation Tabs -->
+        <div class="attendance-tabs-bar" role="tablist">
+            <button type="button" class="tab-button" id="tab-btn-students" role="tab" aria-selected="true" aria-controls="view-students">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span>Student Summary &amp; History</span>
+                <span class="tab-badge" th:text="${totalStudents}">0</span>
+            </button>
+            <button type="button" class="tab-button" id="tab-btn-log" role="tab" aria-selected="false" aria-controls="view-log">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="m9 16 2 2 4-4"></path></svg>
+                <span>Detailed Check-in Log</span>
+                <span class="tab-badge" th:text="${#lists.size(records)}">0</span>
+            </button>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW 1: STUDENT ATTENDANCE SUMMARY & HISTORY                        -->
+        <!-- =================================================================== -->
+        <section id="view-students" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-btn-students">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">PER-STUDENT METRICS</p>
+                    <h2>Student attendance history</h2>
+                </div>
+                <span class="count-badge" th:text="${totalStudents} + ' students'">0 students</span>
+            </div>
+
+            <!-- Empty State for Students -->
+            <div th:if="${#lists.isEmpty(studentSummaries)}" class="empty-state compact">
+                <p>No students have been enrolled or logged yet. Register students on the <a th:href="@{/register}">Register</a> page to begin tracking attendance.</p>
+            </div>
+
+            <!-- Student Summary Table -->
+            <div th:unless="${#lists.isEmpty(studentSummaries)}" class="table-wrap">
+                <table class="data-table student-summary-table" id="student-summary-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>Student / Person Name</th>
+                            <th>Total Days Present</th>
+                            <th>First Seen</th>
+                            <th>Last Seen</th>
+                            <th style="text-align: center;">Status Today</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="student, iter : ${studentSummaries}">
+                            <td class="col-num" th:text="${iter.count}">1</td>
+                            <td class="col-name">
+                                <strong class="student-name-text" th:text="${student.studentName}">Student Name</strong>
+                            </td>
+                            <td>
+                                <span class="days-badge" th:text="${student.totalDaysPresent} + ' day' + (${student.totalDaysPresent} == 1 ? '' : 's')">0 days</span>
+                            </td>
+                            <td class="col-date" th:text="${student.firstSeen != null} ? ${#temporals.format(student.firstSeen, 'dd MMM yyyy')} : '—'">—</td>
+                            <td class="col-date" th:text="${student.lastSeen != null} ? ${#temporals.format(student.lastSeen, 'dd MMM yyyy')} : '—'">—</td>
+                            <td style="text-align: center;">
+                                <span th:if="${student.presentToday}" class="badge-present" th:title="'Checked in at ' + ${#temporals.format(student.todayTime, 'hh:mm:ss a')}">
+                                    <span class="dot-green"></span> Present
+                                    <small th:if="${student.todayTime != null}" th:text="'(' + ${#temporals.format(student.todayTime, 'hh:mm a')} + ')'" style="font-weight: 500; opacity: .85;"></small>
+                                </span>
+                                <span th:unless="${student.presentToday}" class="badge-absent">
+                                    <span class="dot-red"></span> Absent
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a class="button text-button view-history-link" th:href="@{/attendance(name=${student.studentName},tab='log')}" title="View all check-in entries for this student">
+                                    <span>View check-ins</span> <span aria-hidden="true">→</span>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- VIEW 2: DETAILED CHECK-IN LOG                                       -->
+        <!-- =================================================================== -->
+        <section id="view-log" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-btn-log" style="display: none;">
+            <!-- Filter Controls -->
+            <section class="filters" aria-label="Filter check-in records">
+                <div class="filter-header-row">
+                    <p class="form-step">SEARCH &amp; FILTER CHECK-INS</p>
+                    <div class="quick-date-pills">
+                        <button type="button" class="date-chip" id="btn-today">Today</button>
+                        <button type="button" class="date-chip" id="btn-clear-date">All Dates</button>
+                    </div>
+                </div>
+                <form th:action="@{/attendance}" method="get" id="filter-form">
+                    <input type="hidden" name="tab" value="log">
+                    <div class="filter-field">
+                        <label for="name">Person name</label>
+                        <input id="name" name="name" type="search" placeholder="Search by name…" th:value="${selectedName}">
+                    </div>
+                    <div class="filter-field">
+                        <label for="date">Attendance date</label>
+                        <input id="date" name="date" type="date" th:value="${selectedDate}">
+                    </div>
+                    <div class="filter-actions">
+                        <button class="button primary" type="submit">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <span>Apply filter</span>
+                        </button>
+                        <a class="button text-button" th:href="@{/attendance(tab='log')}">Clear all</a>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Table Panel -->
+            <section class="table-panel">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">CHRONOLOGICAL LOG</p>
+                        <h2>Detailed check-in records</h2>
+                    </div>
+                    <div class="table-tools">
+                        <button type="button" class="button text-button copy-table-btn" id="copy-table-btn" title="Copy table to clipboard">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span id="copy-btn-text">Copy table</span>
+                        </button>
+                        <span class="count-badge" th:text="${#lists.size(records)} + ' record(s)'">0 records</span>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div th:if="${#lists.isEmpty(records)}" class="empty-state compact">
+                    <p>No matching check-in records were found. Try adjusting your search filters or clear filters.</p>
+                    <a th:if="${hasFilters}" class="button secondary" th:href="@{/attendance(tab='log')}">Clear active filters</a>
+                </div>
+
+                <!-- Detailed Table -->
+                <div th:unless="${#lists.isEmpty(records)}" class="table-wrap">
+                    <table class="data-table" id="attendance-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>Student Name</th>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Time Recorded</th>
+                                <th style="width: 100px; text-align: center;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="record, iter : ${records}">
+                                <td class="col-num" th:text="${iter.count}">1</td>
+                                <td class="col-name">
+                                    <strong th:text="${record.personName}">Person</strong>
+                                </td>
+                                <td class="col-date" th:text="${#temporals.format(record.attendanceDate, 'dd MMM yyyy')}">Date</td>
+                                <td class="col-day" th:text="${#temporals.format(record.attendanceDate, 'EEEE')}">Day</td>
+                                <td class="col-time" th:text="${#temporals.format(record.attendanceTime, 'hh:mm:ss a')}">Time</td>
+                                <td style="text-align: center;">
+                                    <span class="badge-present">Present</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+
+        <!-- Attendance CSV Import Panel -->
+        <section class="import-panel" aria-label="Upload external attendance data" style="margin-top: 36px;">
+            <div class="import-header">
+                <div class="import-icon-badge" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </div>
+                <div>
+                    <p class="form-step">IMPORT HISTORIC DATA</p>
+                    <h2>Import attendance CSV</h2>
+                    <p class="import-subtitle">Upload a spreadsheet from another system. Records automatically link to students, and duplicate days are safely skipped.</p>
+                </div>
+            </div>
+            <form th:action="@{/attendance/import}" method="post" enctype="multipart/form-data" class="import-form">
+                <div class="import-file-input">
+                    <input id="csv-file" name="file" type="file" accept=".csv,.tsv,.txt" required>
+                </div>
+                <button class="button secondary" type="submit">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>Import file</span>
+                </button>
+            </form>
         </section>
     </main>
     <footer th:replace="~{fragments :: footer}"></footer>
 </div>
+
+<script th:inline="javascript">
+    (() => {
+        // Tab switching logic (Students Summary vs Detailed Log)
+        const tabStudents = document.getElementById('tab-btn-students');
+        const tabLog = document.getElementById('tab-btn-log');
+        const viewStudents = document.getElementById('view-students');
+        const viewLog = document.getElementById('view-log');
+
+        const activeTab = /*[[${activeTab}]]*/ 'students';
+
+        function showTab(tabName) {
+            if (tabName === 'log') {
+                tabLog.classList.add('tab-active');
+                tabLog.setAttribute('aria-selected', 'true');
+                tabStudents.classList.remove('tab-active');
+                tabStudents.setAttribute('aria-selected', 'false');
+                viewLog.style.display = 'block';
+                viewStudents.style.display = 'none';
+            } else {
+                tabStudents.classList.add('tab-active');
+                tabStudents.setAttribute('aria-selected', 'true');
+                tabLog.classList.remove('tab-active');
+                tabLog.setAttribute('aria-selected', 'false');
+                viewStudents.style.display = 'block';
+                viewLog.style.display = 'none';
+            }
+        }
+
+        // Initialize active tab from server model
+        showTab(activeTab);
+
+        tabStudents.addEventListener('click', () => showTab('students'));
+        tabLog.addEventListener('click', () => showTab('log'));
+
+        // Quick Date Filter Pills
+        const todayBtn = document.getElementById('btn-today');
+        const clearDateBtn = document.getElementById('btn-clear-date');
+        const dateInput = document.getElementById('date');
+        const filterForm = document.getElementById('filter-form');
+
+        if (todayBtn && dateInput && filterForm) {
+            todayBtn.addEventListener('click', () => {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                dateInput.value = `${year}-${month}-${day}`;
+                filterForm.submit();
+            });
+        }
+
+        if (clearDateBtn && dateInput && filterForm) {
+            clearDateBtn.addEventListener('click', () => {
+                dateInput.value = '';
+                filterForm.submit();
+            });
+        }
+
+        // Copy Table to Clipboard
+        const copyBtn = document.getElementById('copy-table-btn');
+        const copyText = document.getElementById('copy-btn-text');
+        const table = document.getElementById('attendance-table');
+
+        if (copyBtn && table && copyText) {
+            copyBtn.addEventListener('click', async () => {
+                const rows = Array.from(table.querySelectorAll('tr'));
+                const text = rows.map(row => {
+                    const cells = Array.from(row.querySelectorAll('th, td'));
+                    return cells.map(c => c.textContent.trim().replace(/\s+/g, ' ')).join('\t');
+                }).join('\n');
+
+                try {
+                    await navigator.clipboard.writeText(text);
+                    const orig = copyText.textContent;
+                    copyText.textContent = 'Copied to clipboard!';
+                    copyBtn.classList.add('btn-copied');
+                    setTimeout(() => {
+                        copyText.textContent = orig;
+                        copyBtn.classList.remove('btn-copied');
+                    }, 2000);
+                } catch (e) {
+                    copyText.textContent = 'Select all & copy';
+                }
+            });
+        }
+    })();
+</script>
 </body>
 </html>

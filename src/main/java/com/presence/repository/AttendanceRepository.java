@@ -6,6 +6,8 @@ package com.presence.repository;
 
 // AttendanceRecord: Data transfer record holding attendance id, person id, name, date, and time.
 import com.presence.model.AttendanceRecord;
+// StudentAttendanceSummary: Data transfer record holding aggregated per-student attendance history.
+import com.presence.model.StudentAttendanceSummary;
 // JdbcTemplate: Spring Framework JDBC helper used to execute SQL queries and parameter mappings safely.
 import org.springframework.jdbc.core.JdbcTemplate;
 // Repository: Marks this class as a Spring Data repository handling database operations.
@@ -34,9 +36,10 @@ public class AttendanceRepository {
      * Records attendance for a person on a specific date and time.
      * Uses "INSERT OR IGNORE" combined with the unique index ux_attendance_name_day
      * so that the database itself guarantees a person is never marked present twice on the same day.
+     * Accepts a nullable Long personId so imported or external records without an enrolled profile can still be saved.
      * Returns true if a new row was inserted, or false if they were already recorded today.
      */
-    public boolean insertIfAbsent(long personId, String personName, LocalDate date, LocalTime time) {
+    public boolean insertIfAbsent(Long personId, String personName, LocalDate date, LocalTime time) {
         int updated = jdbc.update(
                 "INSERT OR IGNORE INTO attendance(person_id, person_name, attendance_date, attendance_time) VALUES (?, ?, ?, ?)", 
                 personId, personName, date.toString(), time.withNano(0).toString());
@@ -94,5 +97,46 @@ public class AttendanceRepository {
      */
     public void clearPersonReference(long personId) {
         jdbc.update("UPDATE attendance SET person_id = NULL WHERE person_id = ?", personId);
+    }
+
+    /**
+     * Retrieves aggregated attendance statistics for all students (both currently registered
+     * and historical records), including total days attended, first and last attendance dates,
+     * and whether they checked in today.
+     */
+    public List<StudentAttendanceSummary> findStudentSummaries(LocalDate today) {
+        String sql = """
+            SELECT 
+                name,
+                COUNT(att_id) AS total_present,
+                MIN(att_date) AS first_seen,
+                MAX(att_date) AS last_seen,
+                MAX(CASE WHEN att_date = ? THEN 1 ELSE 0 END) AS present_today,
+                MAX(CASE WHEN att_date = ? THEN att_time ELSE NULL END) AS today_time
+            FROM (
+                SELECT p.name AS name, a.id AS att_id, a.attendance_date AS att_date, a.attendance_time AS att_time
+                FROM persons p
+                LEFT JOIN attendance a ON (a.person_id = p.id OR (a.person_id IS NULL AND a.person_name = p.name COLLATE NOCASE))
+                UNION ALL
+                SELECT a.person_name AS name, a.id AS att_id, a.attendance_date AS att_date, a.attendance_time AS att_time
+                FROM attendance a
+                WHERE NOT EXISTS (SELECT 1 FROM persons p WHERE p.id = a.person_id OR p.name = a.person_name COLLATE NOCASE)
+            )
+            GROUP BY name
+            ORDER BY name COLLATE NOCASE
+            """;
+        return jdbc.query(sql, (rs, rowNum) -> {
+            String firstStr = rs.getString("first_seen");
+            String lastStr = rs.getString("last_seen");
+            String timeStr = rs.getString("today_time");
+            return new StudentAttendanceSummary(
+                    rs.getString("name"),
+                    rs.getInt("total_present"),
+                    firstStr != null ? LocalDate.parse(firstStr) : null,
+                    lastStr != null ? LocalDate.parse(lastStr) : null,
+                    rs.getInt("present_today") == 1,
+                    timeStr != null ? LocalTime.parse(timeStr) : null
+            );
+        }, today.toString(), today.toString());
     }
 }
