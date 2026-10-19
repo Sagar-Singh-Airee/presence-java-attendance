@@ -32,9 +32,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.bytedeco.opencv.global.opencv_core.CV_32SC1;
 import static org.bytedeco.opencv.global.opencv_core.CV_8UC1;
@@ -52,6 +55,27 @@ import static org.bytedeco.opencv.global.opencv_imgproc.resize;
 public class FaceRecognitionService {
     public static final int FACE_SIZE = 200;
 
+    // ── Haar detector tuning ──────────────────────────────────────────────────
+    /** How much the image is scaled down each pass (1.05 = finer, slower; 1.3 = coarser, faster). */
+    private static final double SCALE_FACTOR   = 1.15;
+    /** Minimum number of overlapping neighbour rectangles a candidate must have to be kept.
+     *  Higher = fewer false positives. 5-7 is a safe sweet-spot for webcam distances. */
+    private static final int    MIN_NEIGHBOURS  = 6;
+    /** Minimum face size in pixels. Ignores tiny blobs far from camera (< 10 % of frame width). */
+    private static final int    MIN_FACE_PX     = 60;
+    /** Maximum face size in pixels. Avoids matching extremely close-up objects (0 = unlimited). */
+    private static final int    MAX_FACE_PX     = 0;
+
+    // ── Temporal vote buffer ──────────────────────────────────────────────────
+    /** How many recent frame predictions to consider for the majority-vote smoothing. */
+    private static final int VOTE_WINDOW = 7;
+    /** The prediction must appear in at least this fraction of the window to be confirmed. */
+    private static final double VOTE_QUORUM = 0.6;
+
+    // ── NMS (non-maximum suppression) ─────────────────────────────────────────
+    /** Two detection boxes are considered the SAME face when their IoU exceeds this. */
+    private static final double NMS_IOU_THRESHOLD = 0.35;
+
     private final Object modelLock = new Object();
     private final DataPaths paths;
     private final OpenCvConfiguration openCv;
@@ -63,6 +87,16 @@ public class FaceRecognitionService {
     private Map<Integer, Person> labels = Map.of();
     private volatile String status = "Face recognition is waiting for registrations.";
 
+    /**
+     * Per-region temporal vote buffer.
+     * Key: a coarse grid cell string derived from the face centre (e.g. "2x1"),
+     * Value: a sliding window of the last VOTE_WINDOW raw label IDs (−1 = unknown).
+     */
+    private final ConcurrentHashMap<String, Deque<Integer>> voteBufs = new ConcurrentHashMap<>();
+    /** Tracks when each grid cell was last seen (ms) so stale entries can be evicted. */
+    private final ConcurrentHashMap<String, Long> voteTimestamps = new ConcurrentHashMap<>();
+    private static final long VOTE_TTL_MS = 2_000;
+
     public FaceRecognitionService(DataPaths paths, OpenCvConfiguration openCv, PresenceProperties properties,
                                   FaceSampleRepository samples, PersonRepository people) {
         this.paths = paths;
@@ -71,6 +105,10 @@ public class FaceRecognitionService {
         this.samples = samples;
         this.people = people;
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Initialisation
+    // ─────────────────────────────────────────────────────────────────────────
 
     /** Checks whether the bundled Haar Cascade is usable, loading it outside the JAR when necessary. */
     public void initializeDetector() {
@@ -94,6 +132,10 @@ public class FaceRecognitionService {
             }
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Public API
+    // ─────────────────────────────────────────────────────────────────────────
 
     public Mat validateAndExtractLargestFace(byte[] imageBytes) {
         if (!openCv.isAvailable()) throw new FaceProcessingException(openCv.failureMessage());
@@ -154,10 +196,15 @@ public class FaceRecognitionService {
                     labelIndexer.put(index, 0, faceLabels.get(index));
                 }
                 labelIndexer.release();
-                recognizer = LBPHFaceRecognizer.create(1, 8, 8, 8, properties.getRecognitionThreshold());
+                // Tighter threshold: LBPH distance must be ≤ configured value AND ≤ 80.
+                // Lower radius/neighbours = more detailed histogram (better for high-res crops).
+                double threshold = Math.min(properties.getRecognitionThreshold(), 80.0);
+                recognizer = LBPHFaceRecognizer.create(1, 8, 8, 8, threshold);
                 recognizer.train(trainingImages, trainingLabels);
                 recognizer.write(paths.models().resolve("lbph_model.yml").toString());
                 labels = Map.copyOf(loadedLabels);
+                voteBufs.clear();
+                voteTimestamps.clear();
                 status = "Face recognition is ready (" + faces.size() + " training photo" + (faces.size() == 1 ? "" : "s") + ").";
             } finally {
                 for (Mat face : faces) face.close();
@@ -165,20 +212,59 @@ public class FaceRecognitionService {
         }
     }
 
-    /** Predicts a registered person when the LBPH distance is at or below the configured threshold. */
+    /**
+     * Detects faces in a BGR frame and returns deduplicated bounding boxes.
+     * Applies tuned Haar parameters + soft NMS to eliminate overlapping detections.
+     */
+    public List<Rect> detect(Mat bgrFrame) {
+        synchronized (modelLock) {
+            initializeDetector();
+            if (detector == null) return List.of();
+            try (Mat gray = new Mat(); RectVector raw = new RectVector()) {
+                cvtColor(bgrFrame, gray, COLOR_BGR2GRAY);
+                detector.detectMultiScale(
+                        gray,
+                        raw,
+                        SCALE_FACTOR,
+                        MIN_NEIGHBOURS,
+                        0,                               // flags – must be 0 for LBP/Haar cascade
+                        new Size(MIN_FACE_PX, MIN_FACE_PX),
+                        new Size(MAX_FACE_PX, MAX_FACE_PX)
+                );
+                List<Rect> boxes = new ArrayList<>((int) raw.size());
+                for (long i = 0; i < raw.size(); i++) boxes.add(new Rect(raw.get(i)));
+                return nms(boxes);
+            }
+        }
+    }
+
+    /**
+     * Predicts a registered person for the given face bounding box.
+     * Uses a per-region sliding-window majority vote to stabilise flickering labels.
+     */
     public Prediction predict(Mat bgrFrame, Rect faceBounds) {
         synchronized (modelLock) {
             if (recognizer == null) return Prediction.unknown();
             try (Mat gray = new Mat(); Mat face = new Mat()) {
                 cvtColor(bgrFrame, gray, COLOR_BGR2GRAY);
                 preprocess(new Mat(gray, faceBounds), face);
-                try (IntPointer label = new IntPointer(1); DoublePointer distance = new DoublePointer(1)) {
-                    recognizer.predict(face, label, distance);
-                    Person person = labels.get(label.get(0));
-                    if (person == null || label.get(0) < 0 || distance.get(0) > properties.getRecognitionThreshold()) {
-                        return Prediction.unknown();
-                    }
-                    return new Prediction(person, distance.get(0));
+                try (IntPointer labelPtr = new IntPointer(1); DoublePointer distPtr = new DoublePointer(1)) {
+                    recognizer.predict(face, labelPtr, distPtr);
+                    int rawLabel = labelPtr.get(0);
+                    double dist  = distPtr.get(0);
+                    double threshold = Math.min(properties.getRecognitionThreshold(), 80.0);
+
+                    // Raw prediction: only accept if distance is within threshold
+                    int vote = (rawLabel >= 0 && dist <= threshold && labels.containsKey(rawLabel))
+                            ? rawLabel : -1;
+
+                    // Apply temporal vote smoothing
+                    String cell = gridCell(faceBounds, bgrFrame.cols(), bgrFrame.rows());
+                    int smoothedLabel = updateVote(cell, vote);
+
+                    if (smoothedLabel < 0) return Prediction.unknown();
+                    Person person = labels.get(smoothedLabel);
+                    return person != null ? new Prediction(person, dist) : Prediction.unknown();
                 }
             } catch (RuntimeException exception) {
                 return Prediction.unknown();
@@ -186,24 +272,102 @@ public class FaceRecognitionService {
         }
     }
 
-    public List<Rect> detect(Mat bgrFrame) {
-        synchronized (modelLock) {
-            initializeDetector();
-            if (detector == null) return List.of();
-            try (Mat gray = new Mat(); RectVector result = new RectVector()) {
-                cvtColor(bgrFrame, gray, COLOR_BGR2GRAY);
-                detector.detectMultiScale(gray, result);
-                List<Rect> faces = new ArrayList<>((int) result.size());
-                for (long index = 0; index < result.size(); index++) faces.add(new Rect(result.get(index)));
-                return faces;
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Non-maximum suppression: removes boxes that overlap heavily with a larger box.
+     * Keeps the largest box of each overlapping cluster.
+     */
+    private List<Rect> nms(List<Rect> boxes) {
+        if (boxes.size() <= 1) return boxes;
+        // Sort descending by area so we always keep the largest of a cluster.
+        boxes.sort((a, b) -> Long.compare(area(b), area(a)));
+        boolean[] suppressed = new boolean[boxes.size()];
+        List<Rect> kept = new ArrayList<>();
+        for (int i = 0; i < boxes.size(); i++) {
+            if (suppressed[i]) continue;
+            kept.add(boxes.get(i));
+            for (int j = i + 1; j < boxes.size(); j++) {
+                if (!suppressed[j] && iou(boxes.get(i), boxes.get(j)) > NMS_IOU_THRESHOLD) {
+                    suppressed[j] = true;
+                }
             }
         }
+        return kept;
+    }
+
+    private static long area(Rect r) { return (long) r.width() * r.height(); }
+
+    private static double iou(Rect a, Rect b) {
+        int ix1 = Math.max(a.x(), b.x());
+        int iy1 = Math.max(a.y(), b.y());
+        int ix2 = Math.min(a.x() + a.width(),  b.x() + b.width());
+        int iy2 = Math.min(a.y() + a.height(), b.y() + b.height());
+        if (ix2 <= ix1 || iy2 <= iy1) return 0.0;
+        double inter = (double)(ix2 - ix1) * (iy2 - iy1);
+        double union = area(a) + area(b) - inter;
+        return union <= 0 ? 0.0 : inter / union;
+    }
+
+    /**
+     * Maps a face bounding box to a coarse grid cell string for vote-buffer keying.
+     * Grid resolution: 8 cells wide × 6 cells tall (granular enough to separate faces,
+     * coarse enough to tolerate minor jitter across frames).
+     */
+    private static String gridCell(Rect r, int frameW, int frameH) {
+        int cx = r.x() + r.width()  / 2;
+        int cy = r.y() + r.height() / 2;
+        int gx = (int)((double) cx / Math.max(frameW, 1)  * 8);
+        int gy = (int)((double) cy / Math.max(frameH, 1) * 6);
+        return gx + "x" + gy;
+    }
+
+    /**
+     * Slides a vote into the window for the given grid cell and returns the
+     * majority label if it meets VOTE_QUORUM, otherwise −1 (unknown).
+     * Evicts stale cells that haven't been seen for VOTE_TTL_MS.
+     */
+    private int updateVote(String cell, int rawLabel) {
+        long now = System.currentTimeMillis();
+        // Evict cells that haven't been active recently
+        voteTimestamps.forEach((k, ts) -> {
+            if (now - ts > VOTE_TTL_MS) {
+                voteBufs.remove(k);
+                voteTimestamps.remove(k);
+            }
+        });
+        Deque<Integer> window = voteBufs.computeIfAbsent(cell, k -> new ArrayDeque<>(VOTE_WINDOW));
+        voteTimestamps.put(cell, now);
+        window.addLast(rawLabel);
+        if (window.size() > VOTE_WINDOW) window.pollFirst();
+
+        // Tally votes
+        Map<Integer, Integer> tally = new HashMap<>();
+        for (int v : window) tally.merge(v, 1, Integer::sum);
+
+        int bestLabel = -1;
+        int bestCount = 0;
+        for (Map.Entry<Integer, Integer> e : tally.entrySet()) {
+            if (e.getValue() > bestCount) { bestCount = e.getValue(); bestLabel = e.getKey(); }
+        }
+        double quorum = (double) bestCount / window.size();
+        return (quorum >= VOTE_QUORUM && bestLabel >= 0) ? bestLabel : -1;
     }
 
     private Mat extractLargestFace(Mat colourImage) {
         try (Mat gray = new Mat(); RectVector found = new RectVector()) {
             cvtColor(colourImage, gray, COLOR_BGR2GRAY);
-            detector.detectMultiScale(gray, found);
+            detector.detectMultiScale(
+                    gray,
+                    found,
+                    SCALE_FACTOR,
+                    MIN_NEIGHBOURS,
+                    0,
+                    new Size(MIN_FACE_PX, MIN_FACE_PX),
+                    new Size(MAX_FACE_PX, MAX_FACE_PX)
+            );
             if (found.size() == 0) throw new FaceProcessingException("No front-facing face was found in this image.");
             Rect largest = found.get(0);
             long largestArea = (long) largest.width() * largest.height();
