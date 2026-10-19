@@ -52,6 +52,7 @@ public class AttendanceService {
     public List<AttendanceRecord> find(String name, LocalDate date) { return repository.find(name, date); }
     public List<AttendanceRecord> all() { return repository.findAll(); }
     public int countToday() { return repository.countToday(LocalDate.now(clock)); }
+    public int countAll() { return repository.countAll(); }
 
     /**
      * Retrieves overall attendance history and summary for all students (both enrolled and historical).

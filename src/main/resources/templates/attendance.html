@@ -46,9 +46,9 @@
                 <span class="metric-card-sub">Pending check-in today</span>
             </div>
             <div class="summary-metric-card">
-                <span class="metric-card-kicker">Total Check-ins</span>
-                <strong class="metric-card-num" th:text="${#lists.size(records)}">0</strong>
-                <span class="metric-card-sub">All historical entries</span>
+                <span class="metric-card-kicker" th:text="${hasFilters} ? 'Filtered Logs' : 'Total Check-ins'">Total Check-ins</span>
+                <strong class="metric-card-num" th:text="${hasFilters} ? ${#lists.size(records)} : ${totalRecords}">0</strong>
+                <span class="metric-card-sub" th:text="${hasFilters} ? (${totalRecords} + ' total in database') : 'All historical entries'">All historical entries</span>
             </div>
         </section>
 
@@ -57,12 +57,12 @@
             <button type="button" class="tab-button" id="tab-btn-students" role="tab" aria-selected="true" aria-controls="view-students">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 <span>Student Summary &amp; History</span>
-                <span class="tab-badge" th:text="${totalStudents}">0</span>
+                <span class="tab-badge" id="tab-badge-students" th:text="${totalStudents}">0</span>
             </button>
             <button type="button" class="tab-button" id="tab-btn-log" role="tab" aria-selected="false" aria-controls="view-log">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="m9 16 2 2 4-4"></path></svg>
                 <span>Detailed Check-in Log</span>
-                <span class="tab-badge" th:text="${#lists.size(records)}">0</span>
+                <span class="tab-badge" id="tab-badge-log" th:text="${#lists.size(records)}">0</span>
             </button>
         </div>
 
@@ -70,62 +70,79 @@
         <!-- VIEW 1: STUDENT ATTENDANCE SUMMARY & HISTORY                        -->
         <!-- =================================================================== -->
         <section id="view-students" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-btn-students">
-            <div class="section-heading">
-                <div>
-                    <p class="eyebrow">PER-STUDENT METRICS</p>
-                    <h2>Student attendance history</h2>
+            <section class="table-panel">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">PER-STUDENT METRICS</p>
+                        <h2>Student attendance history</h2>
+                    </div>
+                    <div class="table-tools">
+                        <input type="search" id="student-search-input" placeholder="Filter students by name…" class="search-input-compact" autocomplete="off" aria-label="Search student by name">
+                        <button type="button" class="button text-button copy-table-btn" id="copy-students-btn" title="Copy student summary table to clipboard">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span id="copy-students-text">Copy table</span>
+                        </button>
+                        <span class="count-badge" id="student-count-badge" th:text="${totalStudents} + ' student' + (${totalStudents} == 1 ? '' : 's')">0 students</span>
+                    </div>
                 </div>
-                <span class="count-badge" th:text="${totalStudents} + ' students'">0 students</span>
-            </div>
 
-            <!-- Empty State for Students -->
-            <div th:if="${#lists.isEmpty(studentSummaries)}" class="empty-state compact">
-                <p>No students have been enrolled or logged yet. Register students on the <a th:href="@{/register}">Register</a> page to begin tracking attendance.</p>
-            </div>
+                <!-- Empty State for Students -->
+                <div th:if="${#lists.isEmpty(studentSummaries)}" class="empty-state compact">
+                    <p>No students have been enrolled or logged yet. Register students on the <a th:href="@{/register}">Register</a> page to begin tracking attendance.</p>
+                </div>
 
-            <!-- Student Summary Table -->
-            <div th:unless="${#lists.isEmpty(studentSummaries)}" class="table-wrap">
-                <table class="data-table student-summary-table" id="student-summary-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;">#</th>
-                            <th>Student / Person Name</th>
-                            <th>Total Days Present</th>
-                            <th>First Seen</th>
-                            <th>Last Seen</th>
-                            <th style="text-align: center;">Status Today</th>
-                            <th style="text-align: right;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="student, iter : ${studentSummaries}">
-                            <td class="col-num" th:text="${iter.count}">1</td>
-                            <td class="col-name">
-                                <strong class="student-name-text" th:text="${student.studentName}">Student Name</strong>
-                            </td>
-                            <td>
-                                <span class="days-badge" th:text="${student.totalDaysPresent} + ' day' + (${student.totalDaysPresent} == 1 ? '' : 's')">0 days</span>
-                            </td>
-                            <td class="col-date" th:text="${student.firstSeen != null} ? ${#temporals.format(student.firstSeen, 'dd MMM yyyy')} : '—'">—</td>
-                            <td class="col-date" th:text="${student.lastSeen != null} ? ${#temporals.format(student.lastSeen, 'dd MMM yyyy')} : '—'">—</td>
-                            <td style="text-align: center;">
-                                <span th:if="${student.presentToday}" class="badge-present" th:title="'Checked in at ' + ${#temporals.format(student.todayTime, 'hh:mm:ss a')}">
-                                    <span class="dot-green"></span> Present
-                                    <small th:if="${student.todayTime != null}" th:text="'(' + ${#temporals.format(student.todayTime, 'hh:mm a')} + ')'" style="font-weight: 500; opacity: .85;"></small>
-                                </span>
-                                <span th:unless="${student.presentToday}" class="badge-absent">
-                                    <span class="dot-red"></span> Absent
-                                </span>
-                            </td>
-                            <td style="text-align: right;">
-                                <a class="button text-button view-history-link" th:href="@{/attendance(name=${student.studentName},tab='log')}" title="View all check-in entries for this student">
-                                    <span>View check-ins</span> <span aria-hidden="true">→</span>
-                                </a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                <!-- Student Summary Table -->
+                <div th:unless="${#lists.isEmpty(studentSummaries)}" class="table-wrap">
+                    <table class="data-table student-summary-table" id="student-summary-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px; text-align: center;">#</th>
+                                <th style="text-align: left;">Student / Person Name</th>
+                                <th style="width: 150px; text-align: center;">Total Days Present</th>
+                                <th style="width: 130px; text-align: center;">First Seen</th>
+                                <th style="width: 130px; text-align: center;">Last Seen</th>
+                                <th style="width: 140px; text-align: center;">Status Today</th>
+                                <th style="width: 140px; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-summary-tbody">
+                            <tr th:each="student, iter : ${studentSummaries}" class="student-row" th:data-name="${#strings.toLowerCase(student.studentName)}">
+                                <td class="col-num" th:text="${iter.count}">1</td>
+                                <td class="col-name">
+                                    <div class="student-name-cell">
+                                        <span class="student-avatar-circle" th:text="${#strings.isEmpty(student.studentName) ? '?' : #strings.substring(student.studentName, 0, 1)}">S</span>
+                                        <strong class="student-name-text" th:text="${student.studentName}">Student Name</strong>
+                                    </div>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="days-badge" th:text="${student.totalDaysPresent} + ' day' + (${student.totalDaysPresent} == 1 ? '' : 's')">0 days</span>
+                                </td>
+                                <td class="col-date" style="text-align: center;" th:text="${student.firstSeen != null} ? ${#temporals.format(student.firstSeen, 'dd MMM yyyy')} : '—'">—</td>
+                                <td class="col-date" style="text-align: center;" th:text="${student.lastSeen != null} ? ${#temporals.format(student.lastSeen, 'dd MMM yyyy')} : '—'">—</td>
+                                <td style="text-align: center;">
+                                    <span th:if="${student.presentToday}" class="badge-present" th:title="'Checked in at ' + ${#temporals.format(student.todayTime, 'hh:mm:ss a')}">
+                                        <span class="dot-green"></span> Present
+                                        <small th:if="${student.todayTime != null}" th:text="'(' + ${#temporals.format(student.todayTime, 'hh:mm a')} + ')'" style="font-weight: 500; opacity: .85;"></small>
+                                    </span>
+                                    <span th:unless="${student.presentToday}" class="badge-absent">
+                                        <span class="dot-red"></span> Absent
+                                    </span>
+                                </td>
+                                <td style="text-align: right;">
+                                    <a class="button text-button view-history-link" th:href="@{/attendance(name=${student.studentName},tab='log')}" title="View all check-in entries for this student">
+                                        <span>View check-ins</span> <span aria-hidden="true">→</span>
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr id="no-student-match-row" style="display: none;">
+                                <td colspan="7" class="no-student-match-row">
+                                    No students match your filter criteria. Try a different search term.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </section>
 
         <!-- =================================================================== -->
@@ -173,7 +190,7 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                             <span id="copy-btn-text">Copy table</span>
                         </button>
-                        <span class="count-badge" th:text="${#lists.size(records)} + ' record(s)'">0 records</span>
+                        <span class="count-badge" th:text="${#lists.size(records)} + ' record' + (${#lists.size(records)} == 1 ? '' : 's')">0 records</span>
                     </div>
                 </div>
 
@@ -188,12 +205,12 @@
                     <table class="data-table" id="attendance-table">
                         <thead>
                             <tr>
-                                <th style="width: 50px;">#</th>
-                                <th>Student Name</th>
-                                <th>Date</th>
-                                <th>Day</th>
-                                <th>Time Recorded</th>
-                                <th style="width: 100px; text-align: center;">Status</th>
+                                <th style="width: 50px; text-align: center;">#</th>
+                                <th style="text-align: left;">Student Name</th>
+                                <th style="width: 140px; text-align: center;">Date</th>
+                                <th style="width: 130px; text-align: center;">Day</th>
+                                <th style="width: 140px; text-align: center;">Time Recorded</th>
+                                <th style="width: 120px; text-align: center;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -202,11 +219,11 @@
                                 <td class="col-name">
                                     <strong th:text="${record.personName}">Person</strong>
                                 </td>
-                                <td class="col-date" th:text="${#temporals.format(record.attendanceDate, 'dd MMM yyyy')}">Date</td>
-                                <td class="col-day" th:text="${#temporals.format(record.attendanceDate, 'EEEE')}">Day</td>
-                                <td class="col-time" th:text="${#temporals.format(record.attendanceTime, 'hh:mm:ss a')}">Time</td>
+                                <td class="col-date" style="text-align: center;" th:text="${#temporals.format(record.attendanceDate, 'dd MMM yyyy')}">Date</td>
+                                <td class="col-day" style="text-align: center;" th:text="${#temporals.format(record.attendanceDate, 'EEEE')}">Day</td>
+                                <td class="col-time" style="text-align: center;" th:text="${#temporals.format(record.attendanceTime, 'hh:mm:ss a')}">Time</td>
                                 <td style="text-align: center;">
-                                    <span class="badge-present">Present</span>
+                                    <span class="badge-present"><span class="dot-green"></span> Present</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -249,10 +266,11 @@
         const viewStudents = document.getElementById('view-students');
         const viewLog = document.getElementById('view-log');
 
-        const activeTab = /*[[${activeTab}]]*/ 'students';
+        const serverActiveTab = /*[[${activeTab}]]*/ 'students';
 
-        function showTab(tabName) {
-            if (tabName === 'log') {
+        function showTab(tabName, updateUrl = false) {
+            const isLog = (tabName === 'log');
+            if (isLog) {
                 tabLog.classList.add('tab-active');
                 tabLog.setAttribute('aria-selected', 'true');
                 tabStudents.classList.remove('tab-active');
@@ -267,13 +285,19 @@
                 viewStudents.style.display = 'block';
                 viewLog.style.display = 'none';
             }
+
+            if (updateUrl && window.history && window.history.replaceState) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', isLog ? 'log' : 'students');
+                window.history.replaceState(null, '', url.toString());
+            }
         }
 
         // Initialize active tab from server model
-        showTab(activeTab);
+        showTab(serverActiveTab);
 
-        tabStudents.addEventListener('click', () => showTab('students'));
-        tabLog.addEventListener('click', () => showTab('log'));
+        tabStudents.addEventListener('click', () => showTab('students', true));
+        tabLog.addEventListener('click', () => showTab('log', true));
 
         // Quick Date Filter Pills
         const todayBtn = document.getElementById('btn-today');
@@ -299,30 +323,66 @@
             });
         }
 
-        // Copy Table to Clipboard
-        const copyBtn = document.getElementById('copy-table-btn');
-        const copyText = document.getElementById('copy-btn-text');
-        const table = document.getElementById('attendance-table');
+        // Copy Helper
+        function setupCopyTable(buttonId, textId, tableId) {
+            const btn = document.getElementById(buttonId);
+            const textEl = document.getElementById(textId);
+            const table = document.getElementById(tableId);
 
-        if (copyBtn && table && copyText) {
-            copyBtn.addEventListener('click', async () => {
-                const rows = Array.from(table.querySelectorAll('tr'));
-                const text = rows.map(row => {
+            if (!btn || !textEl || !table) return;
+
+            btn.addEventListener('click', async () => {
+                const rows = Array.from(table.querySelectorAll('tr')).filter(r => r.style.display !== 'none');
+                const tsv = rows.map(row => {
                     const cells = Array.from(row.querySelectorAll('th, td'));
                     return cells.map(c => c.textContent.trim().replace(/\s+/g, ' ')).join('\t');
                 }).join('\n');
 
                 try {
-                    await navigator.clipboard.writeText(text);
-                    const orig = copyText.textContent;
-                    copyText.textContent = 'Copied to clipboard!';
-                    copyBtn.classList.add('btn-copied');
+                    await navigator.clipboard.writeText(tsv);
+                    const orig = textEl.textContent;
+                    textEl.textContent = 'Copied to clipboard!';
+                    btn.classList.add('btn-copied');
                     setTimeout(() => {
-                        copyText.textContent = orig;
-                        copyBtn.classList.remove('btn-copied');
+                        textEl.textContent = orig;
+                        btn.classList.remove('btn-copied');
                     }, 2000);
                 } catch (e) {
-                    copyText.textContent = 'Select all & copy';
+                    textEl.textContent = 'Select all & copy';
+                }
+            });
+        }
+
+        setupCopyTable('copy-table-btn', 'copy-btn-text', 'attendance-table');
+        setupCopyTable('copy-students-btn', 'copy-students-text', 'student-summary-table');
+
+        // Client-side Student Name Search Filter
+        const studentSearchInput = document.getElementById('student-search-input');
+        const studentRows = Array.from(document.querySelectorAll('.student-row'));
+        const noMatchRow = document.getElementById('no-student-match-row');
+        const studentBadge = document.getElementById('student-count-badge');
+
+        if (studentSearchInput && studentRows.length > 0) {
+            studentSearchInput.addEventListener('input', () => {
+                const q = studentSearchInput.value.trim().toLowerCase();
+                let visibleCount = 0;
+
+                studentRows.forEach(row => {
+                    const name = row.getAttribute('data-name') || '';
+                    if (!q || name.includes(q)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                if (noMatchRow) {
+                    noMatchRow.style.display = (visibleCount === 0) ? '' : 'none';
+                }
+
+                if (studentBadge) {
+                    studentBadge.textContent = `${visibleCount} student${visibleCount === 1 ? '' : 's'}`;
                 }
             });
         }

@@ -71,34 +71,37 @@ public class AttendanceController {
      * Renders the attendance history page with student summaries, daily check-in log,
      * and optional search filters for person name and date.
      */
-     @GetMapping("/attendance")
-     public String records(@RequestParam(name = "name", required = false) String name,
-                           @RequestParam(name = "date", required = false) String date,
-                           @RequestParam(name = "tab", required = false) String tab,
-                           Model model) {
-         LocalDate selectedDate = parseDate(date, model);
-         List<AttendanceRecord> records = attendance.find(name, selectedDate);
-         List<StudentAttendanceSummary> studentSummaries = attendance.studentSummaries();
- 
-         int studentsPresentToday = (int) studentSummaries.stream().filter(StudentAttendanceSummary::presentToday).count();
-         int studentsAbsentToday = studentSummaries.size() - studentsPresentToday;
-         boolean hasFilters = (name != null && !name.isBlank()) || selectedDate != null;
- 
-         // Tab selection: default to "students" view unless a filter was applied or explicitly chosen
-         String activeTab = tab != null ? tab : (hasFilters ? "log" : "students");
- 
-         model.addAttribute("records", records);
-         model.addAttribute("studentSummaries", studentSummaries);
-         model.addAttribute("totalStudents", studentSummaries.size());
-         model.addAttribute("studentsPresentToday", studentsPresentToday);
-         model.addAttribute("studentsAbsentToday", studentsAbsentToday);
-         model.addAttribute("selectedName", name == null ? "" : name);
-         model.addAttribute("selectedDate", date == null ? "" : date);
-         model.addAttribute("activeTab", activeTab);
-         model.addAttribute("hasFilters", hasFilters);
- 
-         return "attendance";
-     }
+    @GetMapping("/attendance")
+    public String records(@RequestParam(name = "name", required = false) String name,
+                          @RequestParam(name = "date", required = false) String date,
+                          @RequestParam(name = "tab", required = false) String tab,
+                          Model model) {
+        LocalDate selectedDate = parseDate(date, model);
+        List<AttendanceRecord> records = attendance.find(name, selectedDate);
+        List<StudentAttendanceSummary> studentSummaries = attendance.studentSummaries();
+        int totalRecords = attendance.countAll();
+
+        int studentsPresentToday = (int) studentSummaries.stream().filter(StudentAttendanceSummary::presentToday).count();
+        int studentsAbsentToday = studentSummaries.size() - studentsPresentToday;
+        boolean hasFilters = (name != null && !name.isBlank()) || selectedDate != null;
+
+        // Clean tab name in case quotes were passed
+        String cleanTab = tab != null ? tab.replace("'", "").replace("\"", "").trim() : null;
+        String activeTab = (cleanTab != null && !cleanTab.isBlank()) ? cleanTab : (hasFilters ? "log" : "students");
+
+        model.addAttribute("records", records);
+        model.addAttribute("totalRecords", totalRecords);
+        model.addAttribute("studentSummaries", studentSummaries);
+        model.addAttribute("totalStudents", studentSummaries.size());
+        model.addAttribute("studentsPresentToday", studentsPresentToday);
+        model.addAttribute("studentsAbsentToday", studentsAbsentToday);
+        model.addAttribute("selectedName", name == null ? "" : name);
+        model.addAttribute("selectedDate", date == null ? "" : date);
+        model.addAttribute("activeTab", activeTab);
+        model.addAttribute("hasFilters", hasFilters);
+
+        return "attendance";
+    }
 
     /**
      * Downloads ALL attendance records as a beautifully styled Microsoft Excel spreadsheet (.xls).

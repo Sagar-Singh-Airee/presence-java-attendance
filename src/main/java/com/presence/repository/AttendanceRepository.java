@@ -92,6 +92,14 @@ public class AttendanceRepository {
     }
 
     /**
+     * Counts the total number of attendance records in the database.
+     */
+    public int countAll() {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM attendance", Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    /**
      * Sets person_id to NULL when a person is deleted from the library.
      * This keeps their past historical attendance records intact while disconnecting the deleted profile.
      */

@@ -2072,49 +2072,90 @@ tbody tr:hover td {
     font-weight: 700;
 }
 
-/* Attendance Table Enhancements */
-#attendance-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
+/* Attendance & Student History Table Enhancements */
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line-dark);
+    border-radius: var(--r-md);
+    background: var(--canvas);
+    box-shadow: var(--shadow-sm);
+    margin-top: 14px;
 }
 
-#attendance-table thead th {
-    position: sticky;
-    top: 76px;
+.data-table,
+#attendance-table,
+#student-summary-table {
+    width: 100%;
+    min-width: 680px;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.data-table thead th,
+#attendance-table thead th,
+#student-summary-table thead th {
     background: var(--paper-deep);
-    z-index: 5;
-    padding: 12px 14px;
-    font-size: .75rem;
+    padding: 13px 16px;
+    font-size: .72rem;
     font-weight: 700;
-    letter-spacing: .05em;
+    letter-spacing: .06em;
     text-transform: uppercase;
     color: var(--ink);
     border-bottom: 2px solid var(--line-dark);
+    vertical-align: middle;
+    white-space: nowrap;
 }
 
-#attendance-table tbody tr {
+.data-table tbody tr,
+#attendance-table tbody tr,
+#student-summary-table tbody tr {
     transition: background var(--t-fast) var(--ease);
 }
 
-#attendance-table tbody tr:nth-child(even) {
+.data-table tbody tr:nth-child(even),
+#attendance-table tbody tr:nth-child(even),
+#student-summary-table tbody tr:nth-child(even) {
     background: rgba(237, 234, 226, .35);
 }
 
-#attendance-table tbody tr:hover {
+.data-table tbody tr:hover,
+#attendance-table tbody tr:hover,
+#student-summary-table tbody tr:hover {
     background: var(--green-soft);
 }
 
-#attendance-table td {
-    padding: 12px 14px;
+.data-table td,
+#attendance-table td,
+#student-summary-table td {
+    padding: 13px 16px;
     border-bottom: 1px solid var(--line);
     font-size: .88rem;
+    vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td,
+#attendance-table tbody tr:last-child td,
+#student-summary-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table th:first-child, .data-table td:first-child,
+#attendance-table th:first-child, #attendance-table td:first-child,
+#student-summary-table th:first-child, #student-summary-table td:first-child {
+    padding-left: 16px !important;
+}
+
+.data-table th:last-child, .data-table td:last-child,
+#attendance-table th:last-child, #attendance-table td:last-child,
+#student-summary-table th:last-child, #student-summary-table td:last-child {
+    padding-right: 16px !important;
 }
 
 .col-num {
     color: var(--ink-soft);
     font-weight: 600;
     font-size: .8rem;
+    text-align: center;
 }
 
 .col-name strong {
@@ -2135,21 +2176,9 @@ tbody tr:hover td {
 }
 
 .badge-present {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: var(--r-pill);
-    background: var(--green-soft);
-    color: var(--forest);
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .02em;
-    border: 1px solid #b8d9c8;
-}
-
-
-.badge-present {
     display: inline-flex;
     align-items: center;
+    vertical-align: middle;
     gap: 5px;
     padding: 3px 10px;
     border-radius: var(--r-pill);
@@ -2164,6 +2193,7 @@ tbody tr:hover td {
 .badge-absent {
     display: inline-flex;
     align-items: center;
+    vertical-align: middle;
     gap: 5px;
     padding: 3px 10px;
     border-radius: var(--r-pill);
@@ -2302,7 +2332,9 @@ tbody tr:hover td {
 
 /* Student Summary Table Styles */
 .days-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 3px 10px;
     border-radius: var(--r-pill);
     background: var(--paper-deep);
@@ -2310,15 +2342,19 @@ tbody tr:hover td {
     font-size: .78rem;
     font-weight: 700;
     color: var(--forest);
+    vertical-align: middle;
 }
 
 .view-history-link {
+    min-height: unset !important;
+    padding: 4px 8px !important;
     font-size: .78rem !important;
     font-weight: 600 !important;
     color: var(--forest) !important;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    vertical-align: middle;
 }
 
 .view-history-link:hover {
@@ -2328,4 +2364,56 @@ tbody tr:hover td {
 .student-name-text {
     color: var(--ink);
     font-size: .92rem;
+}
+
+.student-name-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    vertical-align: middle;
+}
+
+.student-avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--paper-deep);
+    border: 1px solid var(--line-dark);
+    color: var(--forest);
+    font-weight: 700;
+    font-size: .8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.search-input-compact {
+    min-height: 36px !important;
+    padding: 6px 14px !important;
+    border-radius: var(--r-pill) !important;
+    font-size: .8rem !important;
+    border: 1px solid var(--line-dark) !important;
+    background: var(--canvas) !important;
+    width: 220px !important;
+    transition: border-color var(--t-fast) var(--ease), width var(--t-fast) var(--ease);
+}
+
+.search-input-compact:focus {
+    border-color: var(--forest) !important;
+    width: 260px !important;
+}
+
+.student-summary-table td.col-date {
+    color: var(--ink-soft);
+    font-size: .84rem;
+}
+
+.no-student-match-row {
+    text-align: center;
+    padding: 24px !important;
+    color: var(--ink-soft);
+    font-style: italic;
 }
