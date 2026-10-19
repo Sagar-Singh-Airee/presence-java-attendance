@@ -19,14 +19,31 @@ if [ -n "$OLD_PID" ]; then
     sleep 1
 fi
 
-# Locate or build the native Mac JAR
+# Detect target Mac processor architecture
+if [[ $(uname -m) == 'arm64' ]]; then
+    TARGET_PLATFORM="macosx-arm64"
+else
+    TARGET_PLATFORM="macosx-x86_64"
+fi
+
 SMARTVISION_JAR="target/smartvision-1.0.0.jar"
+
+# Verify if JAR exists AND contains native binaries for this Mac architecture
+NEED_BUILD=0
 if [ ! -f "$SMARTVISION_JAR" ]; then
-    echo "📦 Native Mac JAR not found. Building for your processor ($(uname -m))..."
-    if [[ $(uname -m) == 'arm64' ]]; then
-        mvn -Djavacpp.platform=macosx-arm64 clean package -DskipTests
-    else
-        mvn -Djavacpp.platform=macosx-x86_64 clean package -DskipTests
+    echo "📦 Native Mac JAR not found."
+    NEED_BUILD=1
+elif ! jar tf "$SMARTVISION_JAR" 2>/dev/null | grep -q "$TARGET_PLATFORM"; then
+    echo "⚠️ Existing JAR does not contain native libraries for $TARGET_PLATFORM."
+    NEED_BUILD=1
+fi
+
+if [ $NEED_BUILD -eq 1 ]; then
+    echo "📦 Building SmartVision for $TARGET_PLATFORM with Maven..."
+    mvn -Djavacpp.platform="$TARGET_PLATFORM" clean package -DskipTests
+    if [ $? -ne 0 ]; then
+        echo "❌ Maven build failed. Check error above."
+        exit 1
     fi
 fi
 

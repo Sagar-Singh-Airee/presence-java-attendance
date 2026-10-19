@@ -20,10 +20,19 @@ public class OpenCvConfiguration {
     @PostConstruct
     void loadNativeLibraries() {
         try {
-            Loader.load(opencv_java.class);
+            try {
+                Loader.load(opencv_java.class);
+            } catch (Throwable fallback) {
+                Loader.load(org.bytedeco.opencv.global.opencv_core.class);
+            }
+            Loader.load(org.bytedeco.opencv.global.opencv_imgproc.class);
+            Loader.load(org.bytedeco.opencv.global.opencv_imgcodecs.class);
+            Loader.load(org.bytedeco.opencv.global.opencv_videoio.class);
+            Loader.load(org.bytedeco.opencv.global.opencv_objdetect.class);
             log.info("OpenCV native library loaded successfully.");
         } catch (Throwable exception) {
-            failureMessage = "OpenCV could not load. Camera recognition is disabled; registration and records remain available.";
+            String cause = exception.getMessage() != null ? exception.getMessage() : exception.toString();
+            failureMessage = "OpenCV could not load (" + cause + "). Camera recognition is disabled; registration and records remain available.";
             log.error("OpenCV native library failed to load", exception);
         }
     }
