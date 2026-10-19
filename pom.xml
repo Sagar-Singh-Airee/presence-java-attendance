@@ -106,6 +106,18 @@
             </properties>
         </profile>
         <profile>
+            <id>mac-arm64-alias</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>arm64</arch>
+                </os>
+            </activation>
+            <properties>
+                <javacpp.platform>macosx-arm64</javacpp.platform>
+            </properties>
+        </profile>
+        <profile>
             <id>mac-x86_64</id>
             <activation>
                 <os>
