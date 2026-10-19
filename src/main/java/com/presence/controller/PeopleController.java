@@ -46,7 +46,7 @@ public class PeopleController {
      * Shows a success message with an optional warning if file cleanup encountered a non-fatal issue.
      */
     @PostMapping("/faces/{id}/delete")
-    public String delete(@PathVariable long id, RedirectAttributes flash) {
+    public String delete(@PathVariable("id") long id, RedirectAttributes flash) {
         try {
             PeopleService.DeleteResult result = peopleService.delete(id);
             String name = result.person().name();

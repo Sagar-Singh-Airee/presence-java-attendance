@@ -11,23 +11,23 @@ if ! command -v java &> /dev/null; then
     exit 1
 fi
 
-# Locate the best available JAR
-SMARTVISION_JAR="target/smartvision-1.0.0.jar"
-if [ ! -f "$SMARTVISION_JAR" ]; then
-    SMARTVISION_JAR="target/presence-camera-fix-v2.jar"
-fi
-if [ ! -f "$SMARTVISION_JAR" ]; then
-    SMARTVISION_JAR="target/smartvision-ui-v4.jar"
+# Free port 8081 if previously occupied
+OLD_PID=$(lsof -ti:8081 2>/dev/null)
+if [ -n "$OLD_PID" ]; then
+    echo "⚠️ Port 8081 was already in use by process $OLD_PID. Freeing it..."
+    kill -9 "$OLD_PID" 2>/dev/null || true
+    sleep 1
 fi
 
+# Locate or build the native Mac JAR
+SMARTVISION_JAR="target/smartvision-1.0.0.jar"
 if [ ! -f "$SMARTVISION_JAR" ]; then
-    echo "❌ Packaged JAR not found. Building with Maven first..."
+    echo "📦 Native Mac JAR not found. Building for your processor ($(uname -m))..."
     if [[ $(uname -m) == 'arm64' ]]; then
         mvn -Djavacpp.platform=macosx-arm64 clean package -DskipTests
     else
         mvn -Djavacpp.platform=macosx-x86_64 clean package -DskipTests
     fi
-    SMARTVISION_JAR="target/smartvision-1.0.0.jar"
 fi
 
 echo "=========================================================="

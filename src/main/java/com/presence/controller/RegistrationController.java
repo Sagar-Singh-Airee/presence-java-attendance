@@ -24,7 +24,7 @@ public class RegistrationController {
     public String form() { return "register"; }
 
     @PostMapping("/register")
-    public String register(@RequestParam String name, @RequestParam(name = "files", required = false) List<MultipartFile> files,
+    public String register(@RequestParam("name") String name, @RequestParam(name = "files", required = false) List<MultipartFile> files,
                            Model model, RedirectAttributes flash) {
         try {
             RegistrationService.RegistrationResult result = registration.register(name, files);

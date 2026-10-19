@@ -43,7 +43,7 @@ public class PhotoController {
      * Prevents path-traversal attacks by verifying the database record belongs to the person ID.
      */
     @GetMapping("/photos/{personId}/{filename:.+}")
-    public ResponseEntity<UrlResource> photo(@PathVariable long personId, @PathVariable String filename) throws Exception {
+    public ResponseEntity<UrlResource> photo(@PathVariable("personId") long personId, @PathVariable("filename") String filename) throws Exception {
         String relative = personId + "/" + filename;
 
         // Security check: Verify that this photo was registered to this person in SQLite.
