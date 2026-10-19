@@ -195,7 +195,7 @@ public class AttendanceImportService {
 
                 // Look up registered person in SQLite so we link their person_id if available
                 Optional<Person> matchedPerson = personRepository.findByNormalizedName(rawName);
-                Long personId = matchedPerson.map(Person::id).orElse(null);
+                Long personId = matchedPerson.isPresent() ? matchedPerson.get().id() : null;
 
                 // Insert into SQLite database (INSERT OR IGNORE handles unique date/name index)
                 boolean inserted = attendanceService.record(personId, rawName, date, time);

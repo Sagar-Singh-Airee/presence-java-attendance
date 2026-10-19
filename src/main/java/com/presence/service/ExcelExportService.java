@@ -19,8 +19,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 // StandardCharsets: Guarantees consistent UTF-8 encoding across Windows and Mac.
 import java.nio.charset.StandardCharsets;
-// LocalDate: Used for generating report timestamps.
-import java.time.LocalDate;
 // LocalDateTime: Captures the exact creation timestamp for the spreadsheet header.
 import java.time.LocalDateTime;
 // DateTimeFormatter: Converts dates and times into human-friendly strings (e.g. "18 Oct 2026").

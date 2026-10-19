@@ -81,7 +81,12 @@ public class AttendanceController {
         List<StudentAttendanceSummary> studentSummaries = attendance.studentSummaries();
         int totalRecords = attendance.countAll();
 
-        int studentsPresentToday = (int) studentSummaries.stream().filter(StudentAttendanceSummary::presentToday).count();
+        int studentsPresentToday = 0;
+        for (StudentAttendanceSummary summary : studentSummaries) {
+            if (summary != null && summary.presentToday()) {
+                studentsPresentToday++;
+            }
+        }
         int studentsAbsentToday = studentSummaries.size() - studentsPresentToday;
         boolean hasFilters = (name != null && !name.isBlank()) || selectedDate != null;
 

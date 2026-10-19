@@ -345,7 +345,10 @@ public class FaceRecognitionService {
 
         // Tally votes
         Map<Integer, Integer> tally = new HashMap<>();
-        for (int v : window) tally.merge(v, 1, Integer::sum);
+        for (int v : window) {
+            Integer count = tally.get(v);
+            tally.put(v, count == null ? 1 : count + 1);
+        }
 
         int bestLabel = -1;
         int bestCount = 0;
